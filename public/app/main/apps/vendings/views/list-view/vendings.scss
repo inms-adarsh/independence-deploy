@@ -1,0 +1,32 @@
+#vendings {
+
+    .center {
+
+        .header {
+                height: 80px !important;
+                min-height: 80px !important;
+                max-height: 80px !important;
+                padding: 24px 0;
+                color: #fff;
+                .logo {
+                    .logo-icon {
+                        margin: 0 16px 0 0;
+                        md-icon {
+                            color: #fff;
+                        }
+                    }
+
+                    .logo-text {
+                        font-size: 24px;
+                    }
+                }
+            }
+        }
+
+        .content-card {
+
+            .toolbar {
+                padding: 8px;
+            }
+        }
+    }

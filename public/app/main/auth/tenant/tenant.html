@@ -1,0 +1,83 @@
+<div id="tenant" class="flex-scrollable" layout="column" ms-scroll>
+    <md-sidenav class="sidenav" md-component-id="sidenav"
+     ng-include="'app/main/apps/e-commerce/views/orders/sidenavs/main-sidenav.html'" ms-scroll
+                ms-sidenav-helper></md-sidenav>
+    <div id="forgot-password-form-wrapper" layout="column" layout-align="center center">
+        <div id="forgot-password-form" class="md-whiteframe-8dp">
+            <div class="logo md-accent-bg">
+                <span>F</span>
+            </div>
+
+            <div class="title" translate="TENANT.TITLE">Tenant Information</div>
+
+            <form name="TenantForm" ng-submit="vm.addTenant(vm.tenant)" novalidate>
+                <div layout="column" layout-gt-xs="row" flex>
+                  <md-input-container flex="100" flex-gt-xs="50"  md-no-float>
+                    <label translate="TENANT.EMAIL_ADRESS">Email</label>
+                    <input type="email" name="email" ng-model="vm.tenant.email"
+                           ng-pattern="/^.+@.+\..+$/" required>
+                    <div ng-messages="TenantForm.email.$error" role="alert" multiple>
+                        <div ng-message="required">
+                            <span translate="TENANT.ERRORS.EMAIL_REQUIRED">Email field is required</span>
+                        </div>
+                        <div ng-message="pattern">
+                            <span translate="TENANT.ERRORS.EMAIL_MUST_VALID">Email must be a valid e-mail address</span>
+                        </div>
+                    </div>
+                </md-input-container>
+                <md-input-container flex="100" flex-gt-xs="50"  md-no-float>
+                    <label translate="TENANT.PHONE_NUMBER">Phone</label>
+                    <input ng-model="vm.tenant.phone" type="text" required>
+                </md-input-container>
+              </div>
+              <div layout="column" layout-gt-xs="row" flex>
+                <md-input-container flex="100" flex-gt-xs="50"  md-no-float>
+                    <label translate="TENANT.COMPANY">Company</label>
+                    <input ng-model="vm.tenant.company" type="text" required>
+                </md-input-container>
+
+                <md-input-container flex="100" flex-gt-xs="50"  md-no-float>
+                    <label translate="TENANT.ADDRESS">Address</label>
+                    <input ng-model="vm.tenant.address" type="text" required>
+                </md-input-container>
+               </div>
+               <div layout="column" layout-gt-xs="row">
+                    <md-input-container flex>
+                        <label>City</label>
+                        <input type="text" name="city" ng-model="vm.tenant.city" required>
+                    </md-input-container>
+
+                    <md-input-container flex>
+                        <label>State</label>
+                        <input type="text" name="state" ng-model="vm.tenant.state" required>
+                    </md-input-container>
+
+                    <md-input-container flex>
+                        <label>Postal Code</label>
+                        <input name="postalcode" ng-model="vm.tenant.postalCode" placeholder="12345"
+                               required ng-pattern="/^[0-9]{6}$/" md-maxlength="6" required>
+                        <div ng-messages="wizardStep2.postalcode.$error"
+                             role="alert" multiple>
+                            <div ng-message="required"><span>You must supply a postal code.</span></div>
+                            <div ng-message="pattern">
+                                <span>That doesn't look like a valid postal code.</span></div>
+                            <div ng-message="md-maxlength">
+                                <span>Postal code can't be longer than 6 characters.</span>
+                            </div>
+                        </div>
+                    </md-input-container>
+                </div>
+                <md-button type="submit" class="md-raised md-accent submit-button" aria-label="RESET MY PASSWORD"
+                           ng-disabled="TenantForm.$invalid || registerForm.$pristine"
+                           translate="TENANT.SAVE"
+                           translate-attr-aria-label="TENANT.SAVE">
+                    Save
+                </md-button>
+            </form>
+
+            <div class="login" layout="row" layout-align="center center"  ng-show="vm.tenantIdExist">
+                <a class="link" ui-sref="app.auth_login" translate="TENANT.GO_HOME">Go to Home</a>
+            </div>
+        </div>
+    </div>
+</div>

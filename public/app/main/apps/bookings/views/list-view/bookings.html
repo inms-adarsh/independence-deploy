@@ -1,0 +1,53 @@
+<div class="page-layout carded left-sidenav single-scroll" id="bookings" layout="row">
+
+    <!-- TOP BACKGROUND -->
+    <div class="top-bg md-accent-bg"></div>
+    <!-- / TOP BACKGROUND -->
+    
+        <!-- SIDENAV -->
+    <!--<md-sidenav class="sidenav" md-is-locked-open="$mdMedia('gt-md')" md-component-id="sidenav"
+     ng-include="'app/main/apps/bookings/views/list-view/sidenavs/main-sidenav.html'" ms-scroll
+                ms-sidenav-helper>
+
+    </md-sidenav>-->
+    <!-- / SIDENAV -->
+
+    <!-- CENTER -->
+    <div class="center" flex>
+
+        <!-- CONTENT HEADER -->
+        <div class="header" layout="row" layout-align="start center">
+
+            <div class="logo" layout="row" layout-align="start center">
+                <span class="logo-icon">
+                    <md-icon md-font-icon="icon-email" class="icon"></md-icon>
+                </span>
+                <span class="logo-text" translate="BOOKING.TITLE"></span>
+            </div>
+
+        </div>
+        <!-- / CONTENT HEADER -->
+      
+        <!-- CONTENT CARD -->
+        <div class="content-card">
+
+            
+            <!-- CONTENT TOOLBAR -->
+            <!-- / CONTENT TOOLBAR -->
+            <!-- CONTENT -->
+            <md-content class="content" ms-scroll flex>
+
+                <!-- DEMO CONTENT -->
+                <div id="booking-grid" dx-data-grid="vm.bookingGridOptions"></div>
+                <!-- / DEMO CONTENT -->
+
+            </md-content>
+            <!-- / CONTENT -->
+
+        </div>
+        <!-- / CONTENT CARD -->
+
+    </div>
+    <!-- / CENTER -->
+
+</div>

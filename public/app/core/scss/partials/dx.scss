@@ -1,0 +1,40 @@
+.dx-datagrid .dx-row {
+    td {
+        padding: 12px 8px;
+        color: map-get($contrastsMap, 'dark') !important;
+        font-size: 14px;
+        line-height: 20px;
+    }
+} 
+
+.dx-header-row {
+    td {
+        font-size: 16px !important;
+        line-height: 25px;
+        font-weight: 500;
+    }
+}
+
+.dx-widget {
+    font-weight: normal;
+    font-size: 14px;
+    font-family: $font-family-body;
+    line-height: 1.35715;
+}
+
+.dx-datagrid-header-panel {
+    border-bottom: none;
+}
+.dx-datagrid-total-footer, .dx-datagrid-rowsview  {
+    border-top: none
+}
+.dx-highlight-outline, .dx-datagrid-rowsview .dx-texteditor-input {
+    padding: 12px 8px;
+}
+.dx-widget input, .dx-widget textarea {
+    font-family: $font-family-body;
+}
+
+.dx-datagrid .dx-row-alt > td {
+    background-color: #fff;
+}

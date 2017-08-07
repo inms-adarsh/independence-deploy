@@ -1,0 +1,59 @@
+<div class="page-layout carded left-sidenav single-scroll" id="customers" layout="row">
+
+    <!-- TOP BACKGROUND -->
+    <div class="top-bg md-accent-bg"></div>
+    <!-- / TOP BACKGROUND -->
+    
+
+    <!-- CENTER -->
+    <div class="center" flex>
+
+        <!-- CONTENT HEADER -->
+        <div class="header" layout="row" layout-align="start center">
+
+            <div class="logo" layout="row" layout-align="start center">
+                <span class="logo-icon">
+                    <md-icon md-font-icon="icon-email" class="icon"></md-icon>
+                </span>
+                <span class="logo-text" translate="BULKBUYCUSTOMERS.TITLE">Mailbox</span>
+            </div>
+
+        </div>
+        <!-- / CONTENT HEADER -->
+      
+        <!-- CONTENT CARD -->
+        <div class="content-card">
+
+            
+            <!-- CONTENT TOOLBAR -->
+            <!--<div class="toolbar" layout="row" layout-align="space-between center">
+
+                <div layout="row" layout-align="start center">
+
+                    <md-button ng-click="vm.addDialog($event)" class="md-icon-button add-row-button" aria-label="Add"
+                               translate
+                               translate-attr-aria-label="GANTT.ADD">
+                        <md-icon md-font-icon="icon-plus"></md-icon>
+                    </md-button>
+
+                </div>
+
+            </div>-->
+            <!-- / CONTENT TOOLBAR -->
+            <!-- CONTENT -->
+            <md-content class="content" ms-scroll>
+
+                <!-- DEMO CONTENT -->
+                <div id="customer-grid" dx-data-grid="vm.customerGridOptions"></div>
+                <!-- / DEMO CONTENT -->
+
+            </md-content>
+            <!-- / CONTENT -->
+
+        </div>
+        <!-- / CONTENT CARD -->
+
+    </div>
+    <!-- / CENTER -->
+
+</div>

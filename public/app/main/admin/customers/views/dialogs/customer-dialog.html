@@ -1,0 +1,41 @@
+<md-dialog class="customer-dialog" aria-label="New Message">
+    <form class="md-inline-form">
+        <md-toolbar class="md-accent md-hue-2">
+            <div class="md-toolbar-tools" layout="row" layout-align="space-between center">
+                <span class="title" translate="MAIL.NEW_MESSAGE">New Message</span>
+                <md-button class="md-icon-button" ng-click="vm.closeDialog()" aria-label="Close dialog" tranlate
+                           translate-aria-label="MAIL.CLOSE_DIALOG">
+                    <md-icon md-font-icon="icon-close"></md-icon>
+                </md-button>
+            </div>
+        </md-toolbar>
+
+        <md-dialog-content ms-scroll>
+            <div id="customer-form" dx-form="vm.formOptions"></div>
+        </md-dialog-content>
+
+        <md-dialog-actions layout="row" layout-align="space-between center">
+            <div layout="row" layout-align="start center">
+                <md-button ng-click="vm.closeDialog()" class="send-button md-accent md-raised" aria-label="Send"
+                           translate="MAIL.SEND"
+                           translate-attr-aria-label="MAIL.SEND">
+                    SEND
+                </md-button>
+
+                <md-button class="md-icon-button" aria-label="Attach file"
+                           translate-attr-aria-label="MAIL.ATTACH_FILE">
+                    <md-icon md-font-icon="icon-paperclip"></md-icon>
+                    <md-tooltip><span translate="MAIL.ATTACH_FILE"></span></md-tooltip>
+                </md-button>
+            </div>
+
+            <div layout="row">
+                <md-button class="md-icon-button" aria-label="Delete"
+                           translate-attr-aria-label="MAIL.DELETE">
+                    <md-icon md-font-icon="icon-delete"></md-icon>
+                    <md-tooltip><span translate="MAIL.DELETE"></span></md-tooltip>
+                </md-button>
+            </div>
+        </md-dialog-actions>
+    </form>
+</md-dialog>

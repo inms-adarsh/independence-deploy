@@ -1,0 +1,36 @@
+[debug] [2017-08-07T22:15:21.352Z] ----------------------------------------------------------------------
+[debug] [2017-08-07T22:15:21.355Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\Adarsh\AppData\Roaming\npm\node_modules\firebase-tools\bin\firebase serve
+[debug] [2017-08-07T22:15:21.355Z] CLI Version:   3.9.2
+[debug] [2017-08-07T22:15:21.355Z] Platform:      win32
+[debug] [2017-08-07T22:15:21.355Z] Node Version:  v8.2.1
+[debug] [2017-08-07T22:15:21.356Z] Time:          Tue Aug 08 2017 03:45:21 GMT+0530 (India Standard Time)
+[debug] [2017-08-07T22:15:21.356Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2017-08-07T22:15:21.425Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2017-08-07T22:15:21.426Z] > authorizing via signed-in user
+[debug] [2017-08-07T22:15:21.433Z] > refreshing access token with scopes: ["email","https://www.googleapis.com/auth/cloud-platform","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","openid"]
+[debug] [2017-08-07T22:15:21.434Z] >>> HTTP REQUEST POST https://www.googleapis.com/oauth2/v3/token { refresh_token: '1/AqBeHZ1GnitqhztawD23ITOxeRlKFyjA5eRJ3Wo5XY4',
+  client_id: '563584335869-fgrhgmd47bqnekij5i8b5pr03ho849e6.apps.googleusercontent.com',
+  client_secret: 'j9iVZfS8kkCEFUPaAeJV0sAi',
+  grant_type: 'refresh_token',
+  scope: 'email https://www.googleapis.com/auth/cloud-platform https://www.googleapis.com/auth/cloudplatformprojects.readonly https://www.googleapis.com/auth/firebase openid' } 
+ Tue Aug 08 2017 03:45:21 GMT+0530 (India Standard Time)
+[debug] [2017-08-07T22:15:21.733Z] <<< HTTP RESPONSE 200
+[debug] [2017-08-07T22:15:21.788Z] >>> HTTP REQUEST GET https://admin.firebase.com/v1/projects/independence-e3183  
+ Tue Aug 08 2017 03:45:21 GMT+0530 (India Standard Time)
+[debug] [2017-08-07T22:15:23.353Z] <<< HTTP RESPONSE 200
+[debug] [2017-08-07T22:15:23.355Z] >>> HTTP REQUEST GET https://admin.firebase.com/v1/database/independence-e3183/tokens  
+ Tue Aug 08 2017 03:45:23 GMT+0530 (India Standard Time)
+[debug] [2017-08-07T22:15:24.542Z] <<< HTTP RESPONSE 200
+[info] 
+[info] === Serving from 'C:\Users\Adarsh\Documents\Work\independence-deploy'...
+[info] 
+[debug] [2017-08-07T22:15:24.546Z] >>> HTTP REQUEST GET https://cloudresourcemanager.googleapis.com/v1/projects/independence-e3183  
+ Tue Aug 08 2017 03:45:24 GMT+0530 (India Standard Time)
+[debug] [2017-08-07T22:15:26.297Z] <<< HTTP RESPONSE 200
+[debug] [2017-08-07T22:15:26.297Z] >>> HTTP REQUEST GET https://mobilesdk-pa.googleapis.com/v1/projects/750684147677/clients/_:getWebAppConfig  
+ Tue Aug 08 2017 03:45:26 GMT+0530 (India Standard Time)
+[debug] [2017-08-07T22:15:27.334Z] <<< HTTP RESPONSE 200
+[info] i  hosting: Serving hosting files from: public
+[info] +  hosting: Local server: http://localhost:5000
+

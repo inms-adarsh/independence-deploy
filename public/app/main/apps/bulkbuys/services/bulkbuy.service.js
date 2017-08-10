@@ -8,11 +8,6 @@
     /** @ngInject */
     function bulkbuyService($rootScope, $firebaseArray, $firebaseObject, $q, authService, auth, firebaseUtils, dxUtils, config) {
         var tenantId = authService.getCurrentTenant(),
-            formInstance,
-            customerList,
-            statusList,
-            chargesList,
-            formData,            
             quantityList = [{
                 id: 0,
                 quantity: 6
@@ -44,7 +39,7 @@
             }
             bulkbuyObj.date = bulkbuyObj.date.toString();
             bulkbuyObj.balancedQuantity = quantityList[bulkbuyObj.quantity].quantity;
-            firebaseUtils.addData(ref, bulkbuyObj).then(function (key) {
+            return firebaseUtils.addData(ref, bulkbuyObj).then(function (key) {
                 var mergeObj = {};
                 mergeObj['tenant-customer-bulkbuy-records/' + tenantId + '/' + bulkbuyObj.customerSelected + '/records/' + key] = bulkbuyObj;
                 firebaseUtils.updateData(rootRef, mergeObj).then(function (key) {
@@ -139,10 +134,10 @@
             mergeObj['tenant-customer-bulkbuy-records/' + tenantId + '/' + key.customerSelected + '/records/' + key['$id'] + '/deactivated'] = false;
             //mergeObj['tenant-bulkbuy-records-deactivated/'+ tenantId + '/' + key['$id']] = key;
             firebaseUtils.updateData(rootRef, mergeObj).then(function () {
-                var ref = rootRef.child('tenant-customer-bulkbuy-records').child(tenantId).child(bulkbuyData.customerSelected).child('records').orderByChild('deactivated').equalTo(null);
+                var ref = rootRef.child('tenant-customer-bulkbuy-records').child(tenantId).child(key.customerSelected).child('records').orderByChild('deactivated').equalTo(null);
                 firebaseUtils.getListSum(ref, 'balancedQuantity').then(function (data) {
                     var mergeObj = {};
-                    mergeObj['tenant-customer-bulkbuy-records/' + tenantId + '/' + bulkbuyData.customerSelected + '/balancedQuantity'] = data;
+                    mergeObj['tenant-customer-bulkbuy-records/' + tenantId + '/' + key.customerSelected + '/balancedQuantity'] = data;
                     firebaseUtils.updateData(rootRef, mergeObj);
                 });
             });

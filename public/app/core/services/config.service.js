@@ -274,43 +274,6 @@
         }
 
         function bulkbuyGridCols(tenantId, customers, beers) {
-            var beerListSource = new DevExpress.data.CustomStore({
-                load: function (loadOptions) {
-                    var defer = $q.defer(),
-                        ref = rootRef.child('tenant-beers').child(tenantId).orderByChild('deactivated').equalTo(null);
-                    firebaseUtils.fetchList(ref).then(function (data) {
-                        defer.resolve(data);
-                    });
-                    return defer.promise;
-                },
-                byKey: function (key) {
-                    var defer = $q.defer(),
-                        ref = rootRef.child('tenant-beers').child(tenantId).child(key);
-                    firebaseUtils.getItemByRef(ref).then(function (data) {
-                        defer.resolve(data);
-                    });
-                    return defer.promise;
-                }
-            });
-
-            var customerListSource = new DevExpress.data.CustomStore({
-                load: function (loadOptions) {
-                    var defer = $q.defer(),
-                        ref = rootRef.child('tenant-bulkbuy-customers').child(tenantId).orderByChild('deactivated').equalTo(null);
-                    firebaseUtils.fetchList(ref).then(function (data) {
-                        defer.resolve(data);
-                    });
-                    return defer.promise;
-                },
-                byKey: function (key) {
-                    var defer = $q.defer(),
-                        ref = rootRef.child('tenant-bulkbuy-customers').child(tenantId).child(key);
-                    firebaseUtils.getItemByRef(ref).then(function (data) {
-                        defer.resolve(data);
-                    });
-                    return defer.promise;
-                }
-            });
             var gridCols = [{
                 dataField: 'date',
                 caption: 'Date',
@@ -366,6 +329,9 @@
                         return '';
                     }
                 }
+            }, {
+                dataField: 'bookingName',
+                caption: 'Booked By'
             }, {
                 dataField: "quantity",
                 caption: "Units (0.5 Ltrs per unit)",

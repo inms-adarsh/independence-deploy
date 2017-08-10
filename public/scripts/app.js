@@ -1200,196 +1200,212 @@
 
         function init() {
             vm.bulkbuyGridOptions = gridOptions('vm.bulkbuys', $scope.customers, beers);
-            vm.bulkbuyform = formOptions();
         }
 
         $scope.popupOptions = {
             contentTemplate: "info",
             showTitle: true,
-            width: 400,
+            width: '70%',
             height: 'auto',
-            title: "Add Customer",
+            title: "Add Quantity",
             dragEnabled: false,
             closeOnOutsideClick: true,
             bindingOptions: {
-                visible: "visiblePopup",
+                visible: "visiblePopup"
             },
-            onHidden: function() {
-                customerFormInstance.resetValues();
+            onHidden: function () {
+                resetValues();
             }
         };
 
+        function resetValues() {
+            formInstance.resetValues();
+            formInstance.getEditor('date').option('value', new Date());
+            formInstance.getEditor('invoice').focus();
+        }
+        
         $scope.buttonOptions = {
-            text: "Save",
+            text: "Save and Exit",
             type: "success",
             useSubmitBehavior: true,
             validationGroup: "customerData",
-            width: '100%',
             onClick: function (e) {
-                var result = e.validationGroup.validate();
-                if (result.isValid == true) {
-                    var formData = customerFormInstance.option('formData');
-                    var ref = rootRef.child('tenant-bulkbuy-customers').child(tenantId).orderByChild('deactivated').equalTo(null);
-                    firebaseUtils.fetchList(ref).then(function (data) {
-                        var phoneIndex = msUtils.getIndexByArray(data, 'phone', formData.phone),
-                            emailIndex = msUtils.getIndexByArray(data, 'email', formData.email);
+                submitForm(e).then(function() {
+                    $scope.visiblePopup = false;   
+                });
+            } 
+        };
 
-                        if (phoneIndex > -1) {
-                            DevExpress.ui.notify("Phone number already registered!");
-                        } else if (formData.email && emailIndex > -1) {
-                            DevExpress.ui.notify("Email address already registered!");
-                        } else {
-                            BulkbuyCustomerService.saveCustomer(formData).then(function (data) {
-                                BulkbuyCustomerService.fetchCustomerList().then(function (data) {
-                                    $scope.customers = data;
-                                    if (formInstance) {
-                                        formInstance.repaint();
-                                    }
-                                    $scope.visiblePopup = false;
-                                });
-                            });
-                        }
-                    });
-                }
+        $scope.saveNewBttonOptions = {
+            text: "Save and New",
+            type: "info",
+            useSubmitBehavior: true,
+            validationGroup: "customerData",
+            onClick: function (e) {
+                submitForm(e);
             }
         };
 
-        /**
-         * Return form Item Configuration
-         * @returns {Object} Item configuration
-         */
-        function formOptions() {
-            var formOptionsItems = {
-                minColWidth: 233,
-                colCount: "auto",
-                labelLocation: "top",
-                validationGroup: "customerData",
-                onInitialized: function (e) {
-                    customerFormInstance = e.component;
-                },
-                items: [{
-                    dataField: 'name',
-                    caption: 'Name',
-                    validationRules: [{
-                        type: 'required',
-                        message: 'Name is required'
-                    }],
-                }, {
-                    dataField: 'phone',
-                    caption: 'Phone',
-                    validationRules: [{
-                        type: 'required',
-                        message: 'Phone number is required'
-                    }],
-                    editorOptions: {
-                        mask: '0000000000'
-                    }
-                }, {
-                    dataField: 'email',
-                    caption: 'Email',
-                    validationRules: [{
-                        type: 'email',
-                        message: 'Please enter valid e-mail address'
-                    }]
-                }, {
-                    dataField: 'source',
-                    caption: 'Source'
-                }, {
-                    dataField: 'date',
-                    caption: 'Date',
-                    editorType: 'dxDateBox',
-                    validationRules: [{
-                        type: 'required',
-                        message: 'Field is required'
-                    }],
-                    editorOptions: {
-                        width: '100%',
-                        onInitialized: function (e) {
-                            e.component.option('value', new Date());
-                        }
-                    }
+        function submitForm(e) {
+            var defer = $q.defer();
+            var result = e.validationGroup.validate();
+            if (result.isValid == true) {
+                var formData = formInstance.option('formData');
+                var ref = rootRef.child('tenant-bulkbuy-customers').child(tenantId).orderByChild('deactivated').equalTo(null);
+                firebaseUtils.fetchList(ref).then(function (data) {
+                    var phoneIndex = msUtils.getIndexByArray(data, 'phone', formData.phone),
+                        emailIndex = msUtils.getIndexByArray(data, 'email', formData.email);
 
-                }]
-            };
-            return formOptionsItems;
-        };
+                    if (phoneIndex > -1 || emailIndex > -1) {
+                        var bookingData = angular.copy(formData);
+                        bookingData.bookingName = bookingData.customerSelected;
+                        if(phoneIndex > -1) {
+                            bookingData.customerSelected = data[phoneIndex].$id;
+                        } else if(phoneIndex < 0 && emailIndex > -1) {
+                            bookingData.customerSelected = data[emailIndex].$id;
+                        }
+                        bulkbuyService.saveBulkbuy(bookingData).then(function () {
+                            init();
+                            dataGridInstance.refresh();
+                            resetValues();
+                            defer.resolve();
+                        });
+                    } else {
+                        var customerObj = {
+                            name: formData.customerSelected,
+                            phone: formData.phone,
+                            date: formData.date
+                        };
+
+                        if (formData.email) {
+                            customerObj.email = formData.email;
+                        }
+
+                        BulkbuyCustomerService.saveCustomer(customerObj).then(function (key) {
+                            var bookingData = angular.copy(formData);
+                            bookingData.bookingName = bookingData.customerSelected;
+                            bookingData.customerSelected = key;
+                            BulkbuyCustomerService.fetchCustomerList().then(function (data) {
+                                $scope.customers = data;
+                                if (formInstance) {
+                                    formInstance.repaint();
+                                }
+
+                            });
+
+                            bulkbuyService.saveBulkbuy(bookingData).then(function () {
+                                init();
+                                dataGridInstance.refresh();
+                                resetValues();
+                                defer.resolve();
+                            });
+                        });
+                    }
+                });
+            }
+            return defer.promise;
+        }
 
         /**
          * Bulk buy form
          * @param {*} customerList 
          * @param {*} beerList 
          */
-        function bulkbuyForm(customerList, beerList) {
-            var bulkbuyForm = {
-                colCount: 2,
-                onInitialized: function (e) {
-                    formInstance = e.component;
+        vm.bulkgridForm = {
+            colCount: 2,
+            onInitialized: function (e) {
+                formInstance = e.component;
+            },
+            validationGroup: "customerData",
+            items: [{
+                dataField: 'date',
+                label: {
+                    text: 'Date'
                 },
-                items: [{
-                    dataField: 'date',
-                    label: {
-                        text: 'Date'
-                    },
-                    editorType: 'dxDateBox',
-                    editorOptions: {
-                        onInitialized: function (e) {
-                            e.component.option('value', new Date());
-                        }
-                    },
-                    validationRules: [{
-                        type: 'required',
-                        message: 'Date is required'
-                    }]
-                }, {
-                    dataField: 'invoice',
-                    caption: 'Invoice',
-                    dataType: 'string',
-                    validationRules: [{
-                        type: 'required',
-                        message: 'Invoice number is required'
-                    }]
-                }, {
-                    dataField: 'customerSelected',
-                    label: {
-                        text: 'Customer'
-                    },
-                    editorType: 'dxSelectBox',
-                    editorOptions: {
-                        dataSource: $scope.customers,
-                        displayExpr: "name",
-                        valueExpr: "$id",
-                        searchExpr: ["name", "phone", "email"],
-                        itemTemplate: function (itemData, itemIndex, itemElement) {
-                            var rightBlock = $("<div style='display:inline-block;'>");
-                            rightBlock.append("<p style='font-size:larger;'><b>" + itemData.name + "</b></p>");
-                            rightBlock.append("<p>Phone: <span>" + itemData.phone + "</span></p>");
-                            rightBlock.append("<p>Email ID: <span>" + itemData.email ? itemData.email : '' + "</span></p>");
-                            itemElement.append(rightBlock);
-                        },
-                    },
-                    validationRules: [{
-                        type: 'required',
-                        message: 'Please select a customer'
-                    }]
-                }, {
-                    dataField: "quantity",
-                    label: {
-                        text: "Units (0.5 Ltrs per unit)"
-                    },
-                    editorType: 'dxSelectBox',
-                    editorOptions: {
-                        dataSource: quantityList,
-                        displayExpr: "quantity",
-                        valueExpr: "id",
-                    },
-                    validationRules: [{
-                        type: 'required',
-                        message: 'Please select a quantity'
-                    }]
+                editorType: 'dxDateBox',
+                editorOptions: {
+                    width: '100%',
+                    onInitialized: function (e) {
+                        e.component.option('value', new Date());
+                    }
+                },
+                validationRules: [{
+                    type: 'required',
+                    message: 'Date is required'
                 }]
-            };
-            return bulkbuyForm;
-        }
+            }, {
+                dataField: 'invoice',
+                caption: 'Invoice',
+                dataType: 'string',
+                validationRules: [{
+                    type: 'required',
+                    message: 'Invoice number is required'
+                }]
+            }, {
+                dataField: 'customerSelected',
+                label: {
+                    text: 'Customer'
+                },
+                name: 'customerSelected',
+                editorType: 'dxAutocomplete',
+                editorOptions: {
+                    dataSource: $scope.customers,
+                    displayExpr: "name",
+                    valueExpr: "$id",
+                    searchExpr: ["name"],
+                    onSelectionChanged: function (data) {
+                        if (data.selectedItem && data.selectedItem.$id) {
+                            formInstance.getEditor('phone').option('value', data.selectedItem.phone);
+                            formInstance.getEditor('email').option('value', data.selectedItem.email);
+                        }
+                    }
+                },
+                validationRules: [{
+                    type: 'required',
+                    message: 'Please select a customer'
+                }]
+            }, {
+                dataField: "phone",
+                label: {
+                    text: "Phone"
+                },
+                name: 'phone',
+                editorType: 'dxTextBox',
+                validationRules: [{
+                    type: 'required',
+                    message: 'Phone number is required!'
+                }],
+                editorOptions: {
+                    mask: '0000000000'
+                }
+            }, {
+                dataField: "email",
+                label: {
+                    text: "Email"
+                },
+                name: 'email',
+                editorType: 'dxTextBox',
+                validationRules: [{
+                    type: 'email',
+                    message: 'Please enter valid e-mail address'
+                }]
+            }, {
+                dataField: "quantity",
+                label: {
+                    text: "Units (0.5 Ltrs per unit)"
+                },
+                editorType: 'dxSelectBox',
+                editorOptions: {
+                    dataSource: quantityList,
+                    displayExpr: "quantity",
+                    valueExpr: "id"
+                },
+                validationRules: [{
+                    type: 'required',
+                    message: 'Please select a quantity'
+                }]
+            }]
+        };
         /**
          * Grid Options for bulkbuy list
          * @param {Object} dataSource 
@@ -1427,11 +1443,10 @@
                         }]
                     },
                     editing: {
-                        allowAdding: true,
+                        allowAdding: false,
                         allowUpdating: false,
                         allowDeleting: true,
-                        mode: 'form',
-                        form: bulkbuyForm()
+                        mode: 'form'
                     },
                     bindingOptions: {
                         columns: 'gridCols'
@@ -1450,19 +1465,17 @@
                             d.resolve();
                         }
                         e.cancel = d.promise();
-                    }, 
-                    onRowInserted: function(e) {
-                      init();
-                      dataGridInstance.repaint();
-                      dataGridInstance.refresh() ; 
-                    },onToolbarPreparing: function (e) {
-                        var dataGrid = e.component;
-
+                    },
+                    onRowInserted: function (e) {
+                        init();
+                        dataGridInstance.repaint();
+                        dataGridInstance.refresh();
+                    }, onToolbarPreparing: function (e) {
                         e.toolbarOptions.items.unshift({
                             location: "before",
                             widget: "dxButton",
                             options: {
-                                text: "Add New Customer",
+                                text: "Add Quantity",
                                 type: "success",
                                 onClick: function (e) {
                                     $scope.visiblePopup = true;
@@ -1764,7 +1777,7 @@
                     editorType: 'dxTextBox',
                     editorOptions: {
                         disabled: true,
-                        fieldEditDisabled: true,
+                        fieldEditDisabled: true
                     }
                 }]
             };
@@ -3577,11 +3590,6 @@
     /** @ngInject */
     function bulkbuyService($rootScope, $firebaseArray, $firebaseObject, $q, authService, auth, firebaseUtils, dxUtils, config) {
         var tenantId = authService.getCurrentTenant(),
-            formInstance,
-            customerList,
-            statusList,
-            chargesList,
-            formData,            
             quantityList = [{
                 id: 0,
                 quantity: 6
@@ -3613,7 +3621,7 @@
             }
             bulkbuyObj.date = bulkbuyObj.date.toString();
             bulkbuyObj.balancedQuantity = quantityList[bulkbuyObj.quantity].quantity;
-            firebaseUtils.addData(ref, bulkbuyObj).then(function (key) {
+            return firebaseUtils.addData(ref, bulkbuyObj).then(function (key) {
                 var mergeObj = {};
                 mergeObj['tenant-customer-bulkbuy-records/' + tenantId + '/' + bulkbuyObj.customerSelected + '/records/' + key] = bulkbuyObj;
                 firebaseUtils.updateData(rootRef, mergeObj).then(function (key) {
@@ -3708,10 +3716,10 @@
             mergeObj['tenant-customer-bulkbuy-records/' + tenantId + '/' + key.customerSelected + '/records/' + key['$id'] + '/deactivated'] = false;
             //mergeObj['tenant-bulkbuy-records-deactivated/'+ tenantId + '/' + key['$id']] = key;
             firebaseUtils.updateData(rootRef, mergeObj).then(function () {
-                var ref = rootRef.child('tenant-customer-bulkbuy-records').child(tenantId).child(bulkbuyData.customerSelected).child('records').orderByChild('deactivated').equalTo(null);
+                var ref = rootRef.child('tenant-customer-bulkbuy-records').child(tenantId).child(key.customerSelected).child('records').orderByChild('deactivated').equalTo(null);
                 firebaseUtils.getListSum(ref, 'balancedQuantity').then(function (data) {
                     var mergeObj = {};
-                    mergeObj['tenant-customer-bulkbuy-records/' + tenantId + '/' + bulkbuyData.customerSelected + '/balancedQuantity'] = data;
+                    mergeObj['tenant-customer-bulkbuy-records/' + tenantId + '/' + key.customerSelected + '/balancedQuantity'] = data;
                     firebaseUtils.updateData(rootRef, mergeObj);
                 });
             });
@@ -12736,43 +12744,6 @@
         }
 
         function bulkbuyGridCols(tenantId, customers, beers) {
-            var beerListSource = new DevExpress.data.CustomStore({
-                load: function (loadOptions) {
-                    var defer = $q.defer(),
-                        ref = rootRef.child('tenant-beers').child(tenantId).orderByChild('deactivated').equalTo(null);
-                    firebaseUtils.fetchList(ref).then(function (data) {
-                        defer.resolve(data);
-                    });
-                    return defer.promise;
-                },
-                byKey: function (key) {
-                    var defer = $q.defer(),
-                        ref = rootRef.child('tenant-beers').child(tenantId).child(key);
-                    firebaseUtils.getItemByRef(ref).then(function (data) {
-                        defer.resolve(data);
-                    });
-                    return defer.promise;
-                }
-            });
-
-            var customerListSource = new DevExpress.data.CustomStore({
-                load: function (loadOptions) {
-                    var defer = $q.defer(),
-                        ref = rootRef.child('tenant-bulkbuy-customers').child(tenantId).orderByChild('deactivated').equalTo(null);
-                    firebaseUtils.fetchList(ref).then(function (data) {
-                        defer.resolve(data);
-                    });
-                    return defer.promise;
-                },
-                byKey: function (key) {
-                    var defer = $q.defer(),
-                        ref = rootRef.child('tenant-bulkbuy-customers').child(tenantId).child(key);
-                    firebaseUtils.getItemByRef(ref).then(function (data) {
-                        defer.resolve(data);
-                    });
-                    return defer.promise;
-                }
-            });
             var gridCols = [{
                 dataField: 'date',
                 caption: 'Date',
@@ -12828,6 +12799,9 @@
                         return '';
                     }
                 }
+            }, {
+                dataField: 'bookingName',
+                caption: 'Booked By'
             }, {
                 dataField: "quantity",
                 caption: "Units (0.5 Ltrs per unit)",

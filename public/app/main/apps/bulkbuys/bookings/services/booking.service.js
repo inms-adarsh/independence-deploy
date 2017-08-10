@@ -143,7 +143,7 @@
                     editorType: 'dxTextBox',
                     editorOptions: {
                         disabled: true,
-                        fieldEditDisabled: true,
+                        fieldEditDisabled: true
                     }
                 }]
             };

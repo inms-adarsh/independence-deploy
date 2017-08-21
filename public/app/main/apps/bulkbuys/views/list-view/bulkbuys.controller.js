@@ -201,14 +201,11 @@
                     text: "Phone"
                 },
                 name: 'phone',
-                editorType: 'dxTextBox',
                 validationRules: [{
                     type: 'required',
                     message: 'Phone number is required!'
                 }],
-                editorOptions: {
-                    mask: '0000000000'
-                }
+                editorType: 'dxNumberBox'
             }, {
                 dataField: "email",
                 label: {

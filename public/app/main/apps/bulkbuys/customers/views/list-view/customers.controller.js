@@ -64,13 +64,12 @@
                     }, {
                         dataField: 'phone',
                         caption: 'Phone',
+                        dataType: 'number',
                         validationRules: [{
                             type: 'required',
                             message: 'Phone number is required'
                         }],
-                        editorOptions: {
-                            mask: '0000000000'
-                        }
+                        editorType: 'dxNumberBox'
                     }, {
                         dataField: 'email',
                         caption: 'Email',

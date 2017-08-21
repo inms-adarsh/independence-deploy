@@ -20,7 +20,9 @@
             vendingGridCols: vendingGridCols,
             recordGridCols: recordGridCols,
             bulkbuyGridCols: bulkbuyGridCols,
-            bulkBookingGridCols: bulkBookingGridCols
+            bulkBookingGridCols: bulkBookingGridCols,
+            getIndexByArray: getIndexByArray,
+            redeemGridCols: offerRedeemGridCols
         };
 
         return service;
@@ -29,7 +31,59 @@
 
         function bulkbuyCustomerGridCols() {
 
-           
+
+        }
+
+        function offerRedeemGridCols(tenantId, customers) {
+            var gridCols = [{
+                dataField: 'date',
+                caption: 'Date',
+                dataType: 'date',
+                validationRules: [{
+                    type: 'required',
+                    message: 'Date is required'
+                }]
+            }, {
+                dataField: 'customerSelected',
+                caption: 'Name',
+                allowUpdating: false,
+                lookup: {
+                    dataSource: customers,
+                    displayExpr: "name",
+                    valueExpr: "$id",
+                    searchExpr: ["name", "phone", "HHID"]
+                },
+                groupIndex: 0
+            }, {
+                dataField: 'HHID',
+                caption: 'HopHead ID',
+                allowEditing: false,
+                calculateCellValue: function (data) {
+                    var index = getIndexByArray(customers, '$id', data.customerSelected);
+                    if (index > -1) {
+                        return customers[index].HHID;
+                    } else {
+                        return '';
+                    }
+                }
+            }, {
+                dataField: 'phone',
+                caption: 'Phone',
+                dataType: 'number',
+                allowEditing: false,
+                calculateCellValue: function (data) {
+                    var index = getIndexByArray(customers, '$id', data.customerSelected);
+                    if (index > -1) {
+                        return customers[index].phone;
+                    } else {
+                        return '';
+                    }
+                }
+            }, {
+                dataField: 'invoice',
+                caption: 'Invoice'
+            }];
+            return gridCols;
         }
 
 
@@ -48,23 +102,25 @@
             }, {
                 dataField: 'phone',
                 caption: 'Phone',
+                dataType: 'number',
                 validationRules: [{
                     type: 'required',
                     message: 'Phone number is required'
-                }],
-                editorOptions: {
-                    mask: '0000000000'
-                }
+                }]
             }, {
                 dataField: 'HHID',
                 caption: 'HopHead ID',
                 validationRules: [{
                     type: 'required',
                     message: 'HHID is required'
-                }],
+                }]
             }, {
                 dataField: 'dob',
                 caption: 'Date of Birth',
+                dataType: 'date'
+            }, {
+                dataField: 'anniversary',
+                caption: 'Date of Anniversary',
                 dataType: 'date'
             }, {
                 dataField: 'email',
@@ -129,6 +185,7 @@
                 dataField: 'phone',
                 caption: 'Phone',
                 allowEditing: false,
+                dataType: 'number',
                 calculateCellValue: function (data) {
                     var index = getIndexByArray(customers, '$id', data.customerSelected);
                     if (index > -1) {
@@ -239,6 +296,7 @@
             }, {
                 dataField: 'phone',
                 caption: 'Phone',
+                dataType: 'number',
                 allowEditing: false,
                 calculateCellValue: function (data) {
                     var index = getIndexByArray(customers, '$id', data.customerSelected);
@@ -309,6 +367,7 @@
                 dataField: 'phone',
                 caption: 'Phone',
                 allowEditing: false,
+                dataType: 'number',
                 calculateCellValue: function (data) {
                     var index = getIndexByArray(customers, '$id', data.customerSelected);
                     if (index > -1) {
@@ -402,6 +461,7 @@
             }, {
                 dataField: 'phone',
                 caption: 'Phone',
+                dataType: 'number',
                 allowEditing: false,
                 calculateCellValue: function (data) {
                     var index = getIndexByArray(customers, '$id', data.customerSelected);
@@ -418,38 +478,38 @@
                 dataField: 'amountOnBeer',
                 dataType: 'number',
                 caption: 'Amount on Beer',
-                calculateCellValue: function(data) {
-                    return data.amountOnBeer? data.amountOnBeer: 0
+                calculateCellValue: function (data) {
+                    return data.amountOnBeer ? data.amountOnBeer : 0
                 }
             }, {
                 dataField: 'amountOnFood',
                 dataType: 'number',
                 caption: 'Amount on Food',
-                calculateCellValue: function(data) {
-                    return data.amountOnFood? data.amountOnFood: 0
+                calculateCellValue: function (data) {
+                    return data.amountOnFood ? data.amountOnFood : 0
                 }
             }, {
                 dataField: 'amountOnLiquor',
                 caption: 'Amount On Liquor',
                 dataType: 'number',
-                calculateCellValue: function(data) {
-                    return data.amountOnLiquor? data.amountOnLiquor: 0
+                calculateCellValue: function (data) {
+                    return data.amountOnLiquor ? data.amountOnLiquor : 0
                 }
             }, {
                 dataField: 'total',
                 caption: 'Total',
                 calculateCellValue: function (data) {
-                        var count = 0;
-                        if(data.amountOnBeer) {
-                            count = count + data.amountOnBeer;
-                        }
-                        if(data.amountOnFood) {
-                            count = count + data.amountOnFood;
-                        }
-                        if(data.amountOnLiquor) {
-                            count = count + data.amountOnLiquor
-                        }
-                        return count;
+                    var count = 0;
+                    if (data.amountOnBeer) {
+                        count = count + data.amountOnBeer;
+                    }
+                    if (data.amountOnFood) {
+                        count = count + data.amountOnFood;
+                    }
+                    if (data.amountOnLiquor) {
+                        count = count + data.amountOnLiquor
+                    }
+                    return count;
                 }
             }];
             return gridCols;
@@ -528,6 +588,7 @@
             }, {
                 dataField: 'phone',
                 caption: 'Phone',
+                dataType: 'number',
                 allowEditing: false,
                 calculateCellValue: function (data) {
                     var index = getIndexByArray(customers, '$id', data.customerSelected);

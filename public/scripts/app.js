@@ -4,6 +4,317 @@
 
     config.$inject = ["$stateProvider", "$translatePartialLoaderProvider", "msApiProvider", "msNavigationServiceProvider"];
     angular
+        .module('app.records.redeems',
+            [
+                // 3rd Party Dependencies
+                'dx'
+            ]
+        )
+        .config(config);
+
+    /** @ngInject */
+    function config($stateProvider, $translatePartialLoaderProvider, msApiProvider, msNavigationServiceProvider)
+    {
+        // State
+        $stateProvider
+            .state('app.records.redeems', {
+                abstract: true,
+                url     : '/redeems'
+            })
+            .state('app.records.redeems.list', {
+                url      : '/list',
+                views    : {
+                    'content@app': {
+                        templateUrl: 'app/main/apps/records/redeems/views/list-view/redeems.html',
+                        controller : 'RedeemsController as vm'
+                    }
+                },
+                 resolve : {
+                    currentAuth: ["auth", function (auth) {
+                        // returns a promisse so the resolve waits for it to complete
+                        return auth.$requireSignIn();
+                    }],
+                    tenantInfo: ["auth", "authService", function(auth, authService){
+                        return authService.retrieveTenant();
+                    }],
+                    settings: ["adminService", function(adminService) {
+                        return adminService.getCurrentSettings();
+                    }],
+                    customers: ["adminService", function(adminService) {
+                        return adminService.getCurrentCustomers();
+                    }],
+                    beers: ["adminService", function(adminService) {
+                        return adminService.getBeers();
+                    }]
+                },
+                bodyClass: 'redeems'
+            });
+
+        // Translation
+        $translatePartialLoaderProvider.addPart('app/main/apps/records/redeems');
+
+        // Api
+        msApiProvider.register('redeems.dashboard', ['app/data/e-commerce/dashboard.json']);
+        msApiProvider.register('redeems.products', ['app/data/e-commerce/products.json']);
+        msApiProvider.register('redeems.product', ['app/data/e-commerce/product.json']);
+        msApiProvider.register('redeems.orders', ['app/data/e-commerce/orders.json']);
+        msApiProvider.register('redeems.statuses', ['app/data/e-commerce/statuses.json']);
+        msApiProvider.register('redeems.order', ['app/data/e-commerce/order.json']);
+
+        // Navigation
+
+        msNavigationServiceProvider.saveItem('apps.hopheads.redeems', {
+            title: 'Offer Redemption History',
+            state: 'app.records.redeems.list'
+        });
+    }
+})();
+(function ()
+{
+    'use strict';
+
+    RedeemsController.$inject = ["$state", "$scope", "$mdDialog", "$document", "redeemService", "customers", "beers"];
+    angular
+        .module('app.records.redeems')
+        .controller('RedeemsController', RedeemsController);
+
+    /** @ngInject */
+    function RedeemsController($state, $scope, $mdDialog, $document, redeemService, customers, beers)
+    {
+        var vm = this;
+
+        // Data
+        
+        // Methods
+        init();
+        //////////
+
+        function init() {
+            vm.redeemGridOptions = redeemService.gridOptions('vm.redeems', customers, beers);
+        }
+
+    }
+})();
+(function ()
+{
+    'use strict';
+
+    config.$inject = ["$stateProvider", "$translatePartialLoaderProvider", "msApiProvider", "msNavigationServiceProvider"];
+    angular
+        .module('app.records.offers',
+            [
+                // 3rd Party Dependencies
+                'dx'
+            ]
+        )
+        .config(config);
+
+    /** @ngInject */
+    function config($stateProvider, $translatePartialLoaderProvider, msApiProvider, msNavigationServiceProvider)
+    {
+        // State
+        $stateProvider
+            .state('app.records.offers', {
+                abstract: true,
+                url     : '/offers'
+            })
+            .state('app.records.offers.list', {
+                url      : '/list',
+                views    : {
+                    'content@app': {
+                        templateUrl: 'app/main/apps/records/offers/views/list-view/offers.html',
+                        controller : 'OffersController as vm'
+                    }
+                },
+                 resolve : {
+                    currentAuth: ["auth", function (auth) {
+                        // returns a promisse so the resolve waits for it to complete
+                        return auth.$requireSignIn();
+                    }],
+                    tenantInfo: ["auth", "authService", function(auth, authService){
+                        return authService.retrieveTenant();
+                    }],
+                    settings: ["adminService", function(adminService) {
+                        return adminService.getCurrentSettings();
+                    }]
+                },
+                bodyClass: 'offers'
+            });
+
+        // Translation
+        $translatePartialLoaderProvider.addPart('app/main/apps/records/offers');
+
+        // Api
+        msApiProvider.register('offers.dashboard', ['app/data/e-commerce/dashboard.json']);
+        msApiProvider.register('offers.products', ['app/data/e-commerce/products.json']);
+        msApiProvider.register('offers.product', ['app/data/e-commerce/product.json']);
+        msApiProvider.register('offers.orders', ['app/data/e-commerce/orders.json']);
+        msApiProvider.register('offers.statuses', ['app/data/e-commerce/statuses.json']);
+        msApiProvider.register('offers.order', ['app/data/e-commerce/order.json']);
+
+        // Navigation
+
+        msNavigationServiceProvider.saveItem('apps.hopheads.offers', {
+            title: 'Offers',
+            state: 'app.records.offers.list'
+        });
+    }
+})();
+(function () {
+    'use strict';
+
+    OffersController.$inject = ["$state", "$scope", "msUtils", "$mdDialog", "$document", "$q", "$compile", "OfferService", "dxUtils", "authService", "firebaseUtils"];
+    angular
+        .module('app.records.offers')
+        .controller('OffersController', OffersController);
+
+    /** @ngInject */
+    function OffersController($state, $scope, msUtils, $mdDialog, $document, $q, $compile, OfferService, dxUtils, authService, firebaseUtils) {
+        var vm = this,
+            tenantId = authService.getCurrentTenant();;
+
+        // Methods
+        vm.addDialog = addDialog;
+        vm.editDialog = editDialog;
+        init();
+        //////////
+
+        vm.deleteRow = function deleteRow(key) {
+            var ref = rootRef.child('tenant-offer-record-records').child(tenantId).child(key).child('records').orderByChild(key).equalTo(null);
+            firebaseUtils.fetchList(ref).then(function (data) {
+                if (data.length > 0) {
+                    DevExpress.ui.notify("Can not delete the record");
+                }
+            })
+        };
+
+        vm.offerDataSource = new DevExpress.data.CustomStore();
+
+        function init() {
+            var gridOptions = dxUtils.createGrid(),
+                offerGridOptions = {
+                    dataSource: {
+                        load: function () {
+                            var defer = $q.defer();
+                            OfferService.fetchOfferList().then(function (data) {
+                                defer.resolve(data);
+                            });
+                            return defer.promise;
+                        },
+                        insert: function (offerObj) {
+                            OfferService.saveOffer(offerObj);
+                        },
+                        update: function (key, offerObj) {
+                            OfferService.updateOffer(key, offerObj);
+                        },
+                        remove: function (key) {
+                            OfferService.deleteOffer(key);
+                        }
+                    },
+                    summary: {
+                        totalItems: [{
+                            column: 'name',
+                            summaryType: 'count'
+                        }]
+                    },
+                    columns: [{
+                        dataField: 'date',
+                        dataType: 'date',
+                        caption: 'Date',
+                        validationRules: [{
+                            type: 'required',
+                            message: 'Date is required'
+                        }]
+                    }, {
+                        dataField: 'description',
+                        caption: 'Description',
+                        dataType: 'string',
+                        validationRules: [{
+                            type: 'required',
+                            message: 'Description is required'
+                        }],
+                        editorType: 'dxNumberBox'
+                    }, {
+                        dataField: 'expirydate',
+                        caption: 'Expires on',
+                        dataType: 'date'
+                    }],
+                    export: {
+                        enabled: true,
+                        fileName: 'HopHeads Offers',
+                        allowExportSelectedData: true
+                    },
+                    editing: {
+                        allowAdding: true,
+                        allowUpdating: false,
+                        allowDeleting: true,
+                        mode: 'row'
+                    },
+                    onRowRemoving: function (e) {
+                        var d = $.Deferred();
+
+                        if (e.data.customers) {
+                            d.reject("Can not delete the record");
+                        } else {
+                            d.resolve();
+                        }
+
+                        e.cancel = d.promise();
+                    }
+                };
+
+            vm.offerGridOptions = angular.extend(gridOptions, offerGridOptions);
+        }
+
+        /**
+        * Add New Row
+        */
+        function addDialog(ev) {
+            $mdDialog.show({
+                controller: 'OfferDialogController',
+                controllerAs: 'vm',
+                templateUrl: 'app/main/admin/offers/views/dialogs/offer-dialog.html',
+                parent: angular.element($document.body),
+                targetEvent: ev,
+                clickOutsideToClose: true,
+                locals: {
+                    dialogData: {
+                        dialogType: 'add'
+                    }
+                }
+            });
+        }
+
+        /**
+         * Edit Dialog
+         */
+        function editDialog(ev, formView, formData) {
+            $mdDialog.show({
+                controller: 'OfferDialogController',
+                controllerAs: 'vm',
+                templateUrl: 'app/main/apps/offers/views/dialogs/add-edit/edit-dialog.html',
+                parent: angular.element($document.body),
+                targetEvent: ev,
+                clickOutsideToClose: true,
+                locals: {
+                    dialogData: {
+                        chartData: vm.data,
+                        dialogType: 'edit',
+                        formView: formView,
+                        formData: formData
+                    }
+                }
+            });
+        }
+
+    }
+})();
+(function ()
+{
+    'use strict';
+
+    config.$inject = ["$stateProvider", "$translatePartialLoaderProvider", "msApiProvider", "msNavigationServiceProvider"];
+    angular
         .module('app.bulkbuys.customers',
             [
                 // 3rd Party Dependencies
@@ -130,13 +441,12 @@
                     }, {
                         dataField: 'phone',
                         caption: 'Phone',
+                        dataType: 'number',
                         validationRules: [{
                             type: 'required',
                             message: 'Phone number is required'
                         }],
-                        editorOptions: {
-                            mask: '0000000000'
-                        }
+                        editorType: 'dxNumberBox'
                     }, {
                         dataField: 'email',
                         caption: 'Email',
@@ -980,7 +1290,9 @@
     config.$inject = ["$stateProvider", "$translatePartialLoaderProvider", "msApiProvider", "msNavigationServiceProvider"];
     angular
         .module('app.records',
-            [
+            [   
+                'app.records.offers',
+                'app.records.redeems',
                 // 3rd Party Dependencies
                 'dx'
             ]
@@ -1074,6 +1386,445 @@
 
     }
 })();
+(function () {
+    'use strict';
+
+    redeemService.$inject = ["$firebaseArray", "$firebaseObject", "$q", "authService", "auth", "firebaseUtils", "dxUtils", "config"];
+    angular
+        .module('app.records.redeems')
+        .factory('redeemService', redeemService);
+
+    /** @ngInject */
+    function redeemService($firebaseArray, $firebaseObject, $q, authService, auth, firebaseUtils, dxUtils, config) {
+        var tenantId = authService.getCurrentTenant(),
+            formInstance;
+        // Private variables
+
+        var service = {
+            gridOptions: gridOptions,
+            saveRedeem: saveRedeem,
+            updateRedeem: updateRedeem,
+            fetchRedeemList: fetchRedeemList,
+            redeemForm: redeemForm
+        };
+
+        return service;
+
+        //////////
+
+        function redeemForm(customerList, beerList) {
+            var redeemForm = {
+                onInitialized: function (e) {
+                    formInstance = e.component;
+                },
+                items: [{
+                    itemType: "group",
+                    caption: "Information",
+                    colSpan: 2,
+                    colCount: 2,
+                    items: [
+                        {
+                            dataField: 'date',
+                            label: {
+                                text: 'Date'
+                            },
+                            editorType: 'dxDateBox',
+                            editorOptions: {
+                                width: '100%',
+                                onInitialized: function (e) {
+                                    e.component.option('value', new Date());
+                                }
+                            },
+                            validationRules: [{
+                                type: 'required',
+                                message: 'Date is required'
+                            }]
+                        }, {
+                            dataField: 'invoice',
+                            label: {
+                                text: 'Invoice'
+                            },
+                            validationRules: [{
+                                type: 'required',
+                                message: 'Invoice number is required'
+                            }]
+                        }, {
+                            dataField: 'customerSelected',
+                            label: {
+                                text: 'Customer'
+                            },
+                            editorType: 'dxSelectBox',
+                            editorOptions: {
+                                dataSource: customerList,
+                                displayExpr: "name",
+                                valueExpr: "$id",
+                                searchExpr: ["name", "phone", "HHID"],
+                                itemTemplate: function (itemData, itemIndex, itemElement) {
+                                    var rightBlock = $("<div style='display:inline-block;'>");
+                                    rightBlock.append("<p style='font-size:larger;'><b>" + itemData.name + "</b></p>");
+                                    rightBlock.append("<p>Phone: <span>" + itemData.phone + "</span></p>");
+                                    rightBlock.append("<p>HopHead ID: <span>" + itemData.HHID + "</span></p>");
+                                    itemElement.append(rightBlock);
+                                }, onSelectionChanged: function (customer) {
+                                    if (customer.selectedItem && customer.selectedItem.$id) {
+                                        formInstance.getEditor('offers').option('items', '');
+                                        var ref = rootRef.child('tenant-redeem-offers').child(tenantId).orderByChild('deactivated').equalTo(null);
+                                        firebaseUtils.fetchList(ref).then(function (data) {
+                                            var selectedList = [];
+                                            for (var item = 0; item < data.length; item++) {
+                                                if (data[item].customers && (!data[item].customers.hasOwnProperty(customer.selectedItem.$id) || data[item].customers[customer.selectedItem.$id] === false)) {
+                                                    selectedList.push(data[item]);
+                                                } else if (!data[item].customers) {
+                                                    selectedList.push(data[item]);
+                                                }
+                                            }
+                                            formInstance.getEditor('offers').option('items', selectedList);
+                                        });
+                                    }
+                                }
+                            },
+                            validationRules: [{
+                                type: 'required',
+                                message: 'Please select a customer'
+                            }]
+                        }, 'amountOnBeer', 'amountOnLiquor', 'amountOnFood'
+                    ]
+                },
+                {
+                    itemType: "group",
+                    caption: "Redeem Offers",
+                    colSpan: 2,
+                    colCount: 2,
+                    items: [{
+                        dataField: 'offers',
+                        label: {
+                            text: 'Select Offers'
+                        },
+                        name: 'offers',
+                        editorOptions: {
+                            displayExpr: "description",
+                            valueExpr: "$id",
+                            noDataText: 'No offers available',
+                            showSelectionControls: true,
+                            applyValueMode: "useButtons"
+                        },
+                        editorType: 'dxTagBox'
+                    }]
+                }]
+            };
+            return redeemForm;
+        }
+        /**
+         * Grid Options for redeem list
+         * @param {Object} dataSource 
+         */
+        function gridOptions(dataSource, customers, beers) {
+            var gridOptions = dxUtils.createGrid(),
+                otherConfig = {
+                    dataSource: {
+                        load: function () {
+                            var defer = $q.defer();
+                            fetchRedeemList().then(function (data) {
+                                var hist = [];
+
+                                for (var i = 0; i < data.length; i++) {
+                                    if (data[i].customers) {
+                                        for(var j = 0; j < data[i].customers.length; i++) {
+                                            var obj = {
+                                                customerSelected: (data[i].customers)[j].id,
+                                                invoice: (data[i].customers)[j].invoice,
+                                                offer: data[i].$id
+                                            }
+                                            hist.push(obj);
+                                        }
+                                    }
+                                }
+                                console.log(hist);
+                                defer.resolve(hist);
+                            });
+                            return defer.promise;
+                        },
+                        insert: function (redeemObj) {
+                            var data = formInstance.option('formData');
+                            if (data.offers) {
+                                redeemObj.offers = data.offers;
+                            }
+                            saveRedeem(redeemObj);
+                        },
+                        update: function (key, redeemObj) {
+                            var data = formInstance.option('formData');
+                            if (data.offers) {
+                                redeemObj.offers = data.offers;
+                            }
+                            updateRedeem(key, redeemObj);
+                        },
+                        remove: function (key) {
+                            deleteRedeem(key);
+                        }
+                    },
+                    summary: {
+                        totalItems: [{
+                            column: 'amountOnLiquor',
+                            summaryType: 'sum'
+                        }, {
+                            column: 'amountOnBeer',
+                            summaryType: 'sum'
+                        }, {
+                            column: 'amountOnFood',
+                            summaryType: 'sum'
+                        }, {
+                            column: 'total',
+                            summaryType: 'sum',
+                            customizeText: function (data) {
+                                return 'Total ' + data.value;
+                            }
+                        }]
+                    },
+                    editing: {
+                        allowAdding: false,
+                        allowUpdating: false,
+                        allowDeleting: false,
+                        mode: 'form',
+                        form: redeemForm(customers, beers)
+                    },
+                    columns: config.redeemGridCols(tenantId, customers, beers),
+                    export: {
+                        enabled: true,
+                        fileName: 'Redeems',
+                        allowExportSelectedData: true
+                    }
+
+                };
+
+            angular.extend(gridOptions, otherConfig);
+            return gridOptions;
+        };
+
+        /**
+         * Save form data
+         * @returns {Object} Redeem Form data
+         */
+        function saveRedeem(redeemObj) {
+            var ref = rootRef.child('tenant-redeems').child(tenantId);
+            if (!redeemObj.date) {
+                redeemObj.date = new Date();
+            }
+            redeemObj.date = redeemObj.date.toString();
+            redeemObj.user = auth.$getAuth().uid;
+            firebaseUtils.addData(ref, redeemObj).then(function (key) {
+                var mergeObj = {};
+                mergeObj['tenant-customer-redeems/' + tenantId + '/' + redeemObj.customerSelected + '/redeems/' + key] = redeemObj;
+                if (redeemObj.offers) {
+                    mergeObj['tenant-customer-redeems/' + tenantId + '/' + redeemObj.customerSelected + '/offers/' + key] = redeemObj.offers;
+                }
+                firebaseUtils.updateData(rootRef, mergeObj).then(function (data) {
+                    if (!redeemObj.offers) {
+                        return;
+                    }
+                    var ref = rootRef.child('tenant-redeem-offers').child(tenantId).orderByChild('deactivated').equalTo(null);
+                    firebaseUtils.fetchList(ref).then(function (offers) {
+                        var mergeObj = {};
+                        for (var i = 0; i < redeemObj.offers.length; i++) {
+                            if (config.getIndexByArray(offers, '$id', redeemObj.offers[i]) > -1) {
+                                mergeObj['tenant-redeem-offers/' + tenantId + '/' + redeemObj.offers[i] + '/customers/' + redeemObj.customerSelected] = true;
+                            }
+                        }
+                        return firebaseUtils.updateData(rootRef, mergeObj);
+                    });
+                });
+            });
+        }
+
+        /**
+         * Fetch redeem list
+         * @returns {Object} Redeem data
+         */
+        function fetchRedeemList() {
+            var ref = rootRef.child('tenant-record.offers').child(tenantId).orderByChild('deactivated').equalTo(null);
+            return firebaseUtils.fetchList(ref);
+        }
+
+        /**
+         * Fetch redeem list
+         * @returns {Object} Redeem data
+         */
+        function updateRedeem(key, redeemData) {
+            var ref = rootRef.child('tenant-redeems').child(tenantId).child(key['$id']);
+            firebaseUtils.updateData(ref, redeemData).then(function (key) {
+                var mergeObj = {};
+                mergeObj['tenant-customer-redeems/' + tenantId + '/' + key.customerSelected + '/redeems/' + key['$id']] = redeemData;
+                firebaseUtils.updateData(rootRef, mergeObj);
+            });;
+        }
+
+        /**
+         * Delete Redeem
+         * @returns {Object} redeem data
+         */
+        function deleteRedeem(key) {
+            var mergeObj = {};
+            mergeObj['tenant-redeems/' + tenantId + '/' + key['$id'] + '/deactivated'] = false;
+            mergeObj['tenant-customer-redeems/' + tenantId + '/' + key.customerSelected + '/redeems/' + key['$id'] + '/deactivated'] = false;
+            //mergeObj['tenant-bulkbuy-redeems-deactivated/'+ tenantId + '/' + key['$id']] = key;
+            mergeObj['tenant-customer-redeems/' + tenantId + '/' + key.customerSelected + '/offers/' + key['$id'] + '/deactivated'] = false;
+            firebaseUtils.updateData(rootRef, mergeObj).then(function (redeems) {
+                var mergeObj = {};
+                if (key.offers) {
+                    var ref = rootRef.child('tenant-record-offers').child(tenantId).orderByChild('deactivated').equalTo(null);
+                    firebaseUtils.fetchList(ref).then(function (offers) {
+                        var mergeObj = {};
+                        for (var i = 0; i < key.offers.length; i++) {
+                            if (config.getIndexByArray(offers, '$id', key.offers[i]) > -1) {
+                                mergeObj['tenant-redeem-offers/' + tenantId + '/' + key.offers[i] + '/customers/' + key.customerSelected] = false;
+                            }
+                        }
+                        return firebaseUtils.updateData(rootRef, mergeObj);
+                    });
+                }
+            });
+        }
+
+    }
+}());
+(function () {
+    'use strict';
+
+    OfferService.$inject = ["$firebaseArray", "$firebaseObject", "$q", "authService", "auth", "msUtils", "firebaseUtils", "dxUtils", "config"];
+    angular
+        .module('app.records.offers')
+        .factory('OfferService', OfferService);
+
+    /** @ngInject */
+    function OfferService($firebaseArray, $firebaseObject, $q, authService, auth, msUtils, firebaseUtils, dxUtils, config) {
+        var tenantId = authService.getCurrentTenant();
+        // Private variables
+
+        var service = {
+            formOptions: formOptions,
+            saveOffer: saveOffer,
+            updateOffer: updateOffer,
+            deleteOffer: deleteOffer,
+            fetchOfferList: fetchOfferList
+        };
+
+        var quantityList = [{
+            id: 0,
+            quantity: 6
+        }, {
+            id: 1,
+            quantity: 10
+        }, {
+            id: 2,
+            quantity: 20
+        }];
+
+        return service;
+
+        //////////
+
+        /**
+         * Return form Item Configuration
+         * @returns {Object} Item configuration
+         */
+        function formOptions() {
+            var formOptionsItems = {
+                minColWidth: 233,
+                colCount: "auto",
+                labelLocation: "top",
+                validationGroup: "offerData",
+                items: [{
+                    dataField: 'name',
+                    caption: 'Name',
+                    validationRules: [{
+                        type: 'required',
+                        message: 'Name is required'
+                    }],
+                }, {
+                    dataField: 'phone',
+                    caption: 'Phone',
+                    validationRules: [{
+                        type: 'required',
+                        message: 'Phone number is required'
+                    }],
+                    editorType: 'dxNumberBox'
+                }, {
+                    dataField: 'email',
+                    caption: 'Email',
+                    validationRules: [{
+                        type: 'email',
+                        message: 'Please enter valid e-mail address'
+                    }]
+                }, {
+                    dataField: 'source',
+                    caption: 'Source'
+                }, {
+                    dataField: 'date',
+                    caption: 'Date',
+                    editorType: 'dxDateBox',
+                    validationRules: [{
+                        type: 'required',
+                        message: 'Field is required'
+                    }],
+                    editorOptions: {
+                        width: '100%',
+                        onInitialized: function (e) {
+                            e.component.option('value', new Date());
+                        }
+                    }
+
+                }]
+            };
+            return formOptionsItems;
+        }
+
+
+        /**
+         * Save form data
+         * @returns {Object} Offer Form data
+         */
+        function saveOffer(offerObj) {
+            var ref = rootRef.child('tenant-record-offers').child(tenantId);
+            offerObj.user = auth.$getAuth().uid;
+            if (!offerObj.date) {
+                offerObj.date = new Date();
+            }
+
+            if(offerObj.expiryDate) {
+                offerObj.expiryDate = offerObj.expiryDate.toString();
+            }
+            offerObj.date = offerObj.date.toString();
+            return firebaseUtils.addData(ref, offerObj);
+        }
+
+        /**
+         * Fetch offer list
+         * @returns {Object} Offer data
+         */
+        function fetchOfferList() {
+            var ref = rootRef.child('tenant-record-offers').child(tenantId).orderByChild('deactivated').equalTo(null);
+            return firebaseUtils.fetchList(ref);
+        }
+
+        /**
+         * Fetch offer list
+         * @returns {Object} Offer data
+         */
+        function updateOffer(key, offerData) {
+            var ref = rootRef.child('tenant-record-offers').child(tenantId).child(key['$id']);
+            return firebaseUtils.updateData(ref, offerData);
+        }
+
+        /**
+         * Delete Offer
+         * @returns {Object} offer data
+         */
+        function deleteOffer(key) {
+            var ref = rootRef.child('tenant-record-offers').child(tenantId).child(key['$id']);
+            return firebaseUtils.updateData(ref, { deactivated: false });
+        }
+
+    }
+}());
 (function ()
 {
     'use strict';
@@ -1370,14 +2121,11 @@
                     text: "Phone"
                 },
                 name: 'phone',
-                editorType: 'dxTextBox',
                 validationRules: [{
                     type: 'required',
                     message: 'Phone number is required!'
                 }],
-                editorOptions: {
-                    mask: '0000000000'
-                }
+                editorType: 'dxNumberBox'
             }, {
                 dataField: "email",
                 label: {
@@ -1554,9 +2302,7 @@
                         type: 'required',
                         message: 'Phone number is required'
                     }],
-                    editorOptions: {
-                        mask: '0000000000'
-                    }
+                    editorType: 'dxNumberBox'
                 }, {
                     dataField: 'email',
                     caption: 'Email',
@@ -3412,55 +4158,103 @@
 
         function recordForm(customerList, beerList) {
             var recordForm = {
-                colCount: 2,
                 onInitialized: function (e) {
                     formInstance = e.component;
                 },
                 items: [{
-                    dataField: 'date',
-                    label:{
-                        text: 'Date'
-                    }, 
-                    editorType: 'dxDateBox',
-                    editorOptions: {
-                    },
-                    validationRules: [{
-                        type: 'required',
-                        message: 'Date is required'
+                    itemType: "group",
+                    caption: "Information",
+                    colSpan: 2,
+                    colCount: 2,
+                    items: [
+                        {
+                            dataField: 'date',
+                            label: {
+                                text: 'Date'
+                            },
+                            editorType: 'dxDateBox',
+                            editorOptions: {
+                                width: '100%',
+                                onInitialized: function (e) {
+                                    e.component.option('value', new Date());
+                                }
+                            },
+                            validationRules: [{
+                                type: 'required',
+                                message: 'Date is required'
+                            }]
+                        }, {
+                            dataField: 'invoice',
+                            label: {
+                                text: 'Invoice'
+                            },
+                            validationRules: [{
+                                type: 'required',
+                                message: 'Invoice number is required'
+                            }]
+                        }, {
+                            dataField: 'customerSelected',
+                            label: {
+                                text: 'Customer'
+                            },
+                            editorType: 'dxSelectBox',
+                            editorOptions: {
+                                dataSource: customerList,
+                                displayExpr: "name",
+                                valueExpr: "$id",
+                                searchExpr: ["name", "phone", "HHID"],
+                                itemTemplate: function (itemData, itemIndex, itemElement) {
+                                    var rightBlock = $("<div style='display:inline-block;'>");
+                                    rightBlock.append("<p style='font-size:larger;'><b>" + itemData.name + "</b></p>");
+                                    rightBlock.append("<p>Phone: <span>" + itemData.phone + "</span></p>");
+                                    rightBlock.append("<p>HopHead ID: <span>" + itemData.HHID + "</span></p>");
+                                    itemElement.append(rightBlock);
+                                }, onSelectionChanged: function (customer) {
+                                    if (customer.selectedItem && customer.selectedItem.$id) {
+                                        formInstance.getEditor('offers').option('items', '');
+                                        var ref = rootRef.child('tenant-record-offers').child(tenantId).orderByChild('deactivated').equalTo(null);
+                                        firebaseUtils.fetchList(ref).then(function (data) {
+                                            var selectedList = [];
+                                            for(var item = 0; item< data.length; item++) {
+                                                if(data[item].customers && (!data[item].customers.hasOwnProperty(customer.selectedItem.$id) || data[item].customers[customer.selectedItem.$id] === false)) {
+                                                    selectedList.push(data[item]);
+                                                } else if(!data[item].customers) {
+                                                    selectedList.push(data[item]);
+                                                }
+                                            }
+                                            formInstance.getEditor('offers').option('items', selectedList);
+                                        });
+                                    }
+                                }
+                            },
+                            validationRules: [{
+                                type: 'required',
+                                message: 'Please select a customer'
+                            }]
+                        }, 'amountOnBeer', 'amountOnLiquor', 'amountOnFood'
+                    ]
+                },
+                {
+                    itemType: "group",
+                    caption: "Redeem Offers",
+                    colSpan: 2,
+                    colCount: 2,
+                    items: [{
+                        dataField: 'offers',
+                        label: {
+                            text: 'Select Offers'
+                        },
+                        name: 'offers',
+                        editorOptions: {
+                            displayExpr: "description",
+                            valueExpr: "$id",
+                            noDataText: 'No offers available',
+                            showSelectionControls: true,
+                            applyValueMode: "useButtons"
+                        },
+                        editorType: 'dxTagBox'
                     }]
-                }, {
-                    dataField: 'invoice',
-                    label: {
-                        text: 'Invoice'
-                    }, 
-                    validationRules: [{
-                        type: 'required',
-                        message: 'Invoice number is required'
-                    }]
-                }, {
-                    dataField: 'customerSelected',
-                    label: {
-                        text: 'Customer'
-                    },
-                    editorType: 'dxSelectBox',
-                    editorOptions: {
-                        dataSource: customerList,
-                        displayExpr: "name",
-                        valueExpr: "$id",
-                        searchExpr: ["name", "phone", "HHID"],
-                        itemTemplate: function(itemData, itemIndex, itemElement) {
-                            var rightBlock = $("<div style='display:inline-block;'>");
-                            rightBlock.append("<p style='font-size:larger;'><b>" + itemData.name + "</b></p>");
-                            rightBlock.append("<p>Phone: <span>" + itemData.phone + "</span></p>");
-                            rightBlock.append("<p>HopHead ID: <span>" + itemData.HHID + "</span></p>");
-                            itemElement.append(rightBlock);
-                        }
-                    },
-                    validationRules: [{
-                        type: 'required',
-                        message: 'Please select a customer'
-                    }]
-                }, 'amountOnBeer', 'amountOnLiquor', 'amountOnFood']
+                }]
             };
             return recordForm;
         }
@@ -3481,9 +4275,16 @@
                         },
                         insert: function (recordObj) {
                             var data = formInstance.option('formData');
+                            if (data.offers) {
+                                recordObj.offers = data.offers;
+                            }
                             saveRecord(recordObj);
                         },
                         update: function (key, recordObj) {
+                            var data = formInstance.option('formData');
+                            if (data.offers) {
+                                recordObj.offers = data.offers;
+                            }
                             updateRecord(key, recordObj);
                         },
                         remove: function (key) {
@@ -3494,17 +4295,17 @@
                         totalItems: [{
                             column: 'amountOnLiquor',
                             summaryType: 'sum'
-                        },{
+                        }, {
                             column: 'amountOnBeer',
                             summaryType: 'sum'
-                        },{
+                        }, {
                             column: 'amountOnFood',
                             summaryType: 'sum'
-                        },{
+                        }, {
                             column: 'total',
                             summaryType: 'sum',
-                            customizeText: function(data) {
-                                return 'Total '+ data.value;
+                            customizeText: function (data) {
+                                return 'Total ' + data.value;
                             }
                         }]
                     },
@@ -3534,12 +4335,32 @@
          */
         function saveRecord(recordObj) {
             var ref = rootRef.child('tenant-records').child(tenantId);
+            if (!recordObj.date) {
+                recordObj.date = new Date();
+            }
             recordObj.date = recordObj.date.toString();
             recordObj.user = auth.$getAuth().uid;
-            firebaseUtils.addData(ref, recordObj).then(function(key) {;
+            firebaseUtils.addData(ref, recordObj).then(function (key) {
                 var mergeObj = {};
-                mergeObj['tenant-customer-records/'+ tenantId + '/' + recordObj.customerSelected + '/records/' + key] = recordObj;
-                firebaseUtils.updateData(rootRef, mergeObj);
+                mergeObj['tenant-customer-records/' + tenantId + '/' + recordObj.customerSelected + '/records/' + key] = recordObj;
+                if(recordObj.offers) {
+                    mergeObj['tenant-customer-records/' + tenantId + '/' + recordObj.customerSelected + '/offers/' + key] = recordObj.offers;
+                }
+                firebaseUtils.updateData(rootRef, mergeObj).then(function(data) {
+                    if(!recordObj.offers) {
+                        return;
+                    }
+                    var ref = rootRef.child('tenant-record-offers').child(tenantId).orderByChild('deactivated').equalTo(null);
+                    firebaseUtils.fetchList(ref).then(function(offers) {
+                        var mergeObj = {};
+                        for(var i=0; i< recordObj.offers.length; i++) {
+                            if(config.getIndexByArray(offers, '$id', recordObj.offers[i]) > -1) {
+                                mergeObj['tenant-record-offers/' + tenantId + '/' + recordObj.offers[i] + '/customers/' + recordObj.customerSelected] = recordObj.invoice;
+                            }
+                        }
+                        return firebaseUtils.updateData(rootRef, mergeObj);
+                    });
+                });
             });
         }
 
@@ -3558,9 +4379,9 @@
          */
         function updateRecord(key, recordData) {
             var ref = rootRef.child('tenant-records').child(tenantId).child(key['$id']);
-            firebaseUtils.updateData(ref, recordData).then(function(key) {;
+            firebaseUtils.updateData(ref, recordData).then(function (key) {
                 var mergeObj = {};
-                mergeObj['tenant-customer-records/'+ tenantId + '/' + key.customerSelected + '/records/' + key['$id']] = recordData;
+                mergeObj['tenant-customer-records/' + tenantId + '/' + key.customerSelected + '/records/' + key['$id']] = recordData;
                 firebaseUtils.updateData(rootRef, mergeObj);
             });;
         }
@@ -3571,10 +4392,25 @@
          */
         function deleteRecord(key) {
             var mergeObj = {};
-            mergeObj['tenant-records/'+ tenantId + '/' + key['$id'] + '/deactivated'] = false;
-            mergeObj['tenant-customer-records/'+ tenantId + '/' + key.customerSelected + '/records/' + key['$id'] + '/deactivated'] = false;
+            mergeObj['tenant-records/' + tenantId + '/' + key['$id'] + '/deactivated'] = false;
+            mergeObj['tenant-customer-records/' + tenantId + '/' + key.customerSelected + '/records/' + key['$id'] + '/deactivated'] = false;
             //mergeObj['tenant-bulkbuy-records-deactivated/'+ tenantId + '/' + key['$id']] = key;
-            firebaseUtils.updateData(rootRef, mergeObj);
+            mergeObj['tenant-customer-records/' + tenantId + '/' + key.customerSelected + '/offers/' + key['$id'] + '/deactivated'] = false;
+            firebaseUtils.updateData(rootRef, mergeObj).then(function(records) {
+                var mergeObj = {};
+                if(key.offers) {
+                    var ref = rootRef.child('tenant-record-offers').child(tenantId).orderByChild('deactivated').equalTo(null);
+                    firebaseUtils.fetchList(ref).then(function(offers) {
+                        var mergeObj = {};
+                        for(var i=0; i< key.offers.length; i++) {
+                            if(config.getIndexByArray(offers, '$id', key.offers[i]) > -1) {
+                                mergeObj['tenant-record-offers/' + tenantId + '/' + key.offers[i] + '/customers/' + key.customerSelected] = false;
+                            }
+                        }
+                        return firebaseUtils.updateData(rootRef, mergeObj);
+                    });
+                }
+            });
         }
 
     }
@@ -4454,9 +5290,7 @@
                     label: {
                         text: 'Phone'
                     },
-                    editorOptions: {
-                        mask: '0000000000'
-                    },
+                    editorType: 'dxNumberBox',
                     validationRules: [{
                         type: 'required',
                         message: 'Phone number is required'
@@ -4582,6 +5416,13 @@
         function saveCustomer(customerObj) {
             var ref = rootRef.child('tenant-customers').child(tenantId);
             customerObj.membersSince = customerObj.membersSince.toString();
+            if(customerObj.anniversary) {
+                customerObj.anniversary = customerObj.anniversary.toString();
+            }
+             if (!customerObj.date) {
+                customerObj.date = new Date();
+            }
+            customerObj.date = customerObj.date.toString();
             customerObj.user = auth.$getAuth().uid;
             return firebaseUtils.addData(ref, customerObj);
         }
@@ -12495,7 +13336,9 @@
             vendingGridCols: vendingGridCols,
             recordGridCols: recordGridCols,
             bulkbuyGridCols: bulkbuyGridCols,
-            bulkBookingGridCols: bulkBookingGridCols
+            bulkBookingGridCols: bulkBookingGridCols,
+            getIndexByArray: getIndexByArray,
+            redeemGridCols: offerRedeemGridCols
         };
 
         return service;
@@ -12504,7 +13347,59 @@
 
         function bulkbuyCustomerGridCols() {
 
-           
+
+        }
+
+        function offerRedeemGridCols(tenantId, customers) {
+            var gridCols = [{
+                dataField: 'date',
+                caption: 'Date',
+                dataType: 'date',
+                validationRules: [{
+                    type: 'required',
+                    message: 'Date is required'
+                }]
+            }, {
+                dataField: 'customerSelected',
+                caption: 'Name',
+                allowUpdating: false,
+                lookup: {
+                    dataSource: customers,
+                    displayExpr: "name",
+                    valueExpr: "$id",
+                    searchExpr: ["name", "phone", "HHID"]
+                },
+                groupIndex: 0
+            }, {
+                dataField: 'HHID',
+                caption: 'HopHead ID',
+                allowEditing: false,
+                calculateCellValue: function (data) {
+                    var index = getIndexByArray(customers, '$id', data.customerSelected);
+                    if (index > -1) {
+                        return customers[index].HHID;
+                    } else {
+                        return '';
+                    }
+                }
+            }, {
+                dataField: 'phone',
+                caption: 'Phone',
+                dataType: 'number',
+                allowEditing: false,
+                calculateCellValue: function (data) {
+                    var index = getIndexByArray(customers, '$id', data.customerSelected);
+                    if (index > -1) {
+                        return customers[index].phone;
+                    } else {
+                        return '';
+                    }
+                }
+            }, {
+                dataField: 'invoice',
+                caption: 'Invoice'
+            }];
+            return gridCols;
         }
 
 
@@ -12523,23 +13418,25 @@
             }, {
                 dataField: 'phone',
                 caption: 'Phone',
+                dataType: 'number',
                 validationRules: [{
                     type: 'required',
                     message: 'Phone number is required'
-                }],
-                editorOptions: {
-                    mask: '0000000000'
-                }
+                }]
             }, {
                 dataField: 'HHID',
                 caption: 'HopHead ID',
                 validationRules: [{
                     type: 'required',
                     message: 'HHID is required'
-                }],
+                }]
             }, {
                 dataField: 'dob',
                 caption: 'Date of Birth',
+                dataType: 'date'
+            }, {
+                dataField: 'anniversary',
+                caption: 'Date of Anniversary',
                 dataType: 'date'
             }, {
                 dataField: 'email',
@@ -12604,6 +13501,7 @@
                 dataField: 'phone',
                 caption: 'Phone',
                 allowEditing: false,
+                dataType: 'number',
                 calculateCellValue: function (data) {
                     var index = getIndexByArray(customers, '$id', data.customerSelected);
                     if (index > -1) {
@@ -12714,6 +13612,7 @@
             }, {
                 dataField: 'phone',
                 caption: 'Phone',
+                dataType: 'number',
                 allowEditing: false,
                 calculateCellValue: function (data) {
                     var index = getIndexByArray(customers, '$id', data.customerSelected);
@@ -12784,6 +13683,7 @@
                 dataField: 'phone',
                 caption: 'Phone',
                 allowEditing: false,
+                dataType: 'number',
                 calculateCellValue: function (data) {
                     var index = getIndexByArray(customers, '$id', data.customerSelected);
                     if (index > -1) {
@@ -12877,6 +13777,7 @@
             }, {
                 dataField: 'phone',
                 caption: 'Phone',
+                dataType: 'number',
                 allowEditing: false,
                 calculateCellValue: function (data) {
                     var index = getIndexByArray(customers, '$id', data.customerSelected);
@@ -12893,38 +13794,38 @@
                 dataField: 'amountOnBeer',
                 dataType: 'number',
                 caption: 'Amount on Beer',
-                calculateCellValue: function(data) {
-                    return data.amountOnBeer? data.amountOnBeer: 0
+                calculateCellValue: function (data) {
+                    return data.amountOnBeer ? data.amountOnBeer : 0
                 }
             }, {
                 dataField: 'amountOnFood',
                 dataType: 'number',
                 caption: 'Amount on Food',
-                calculateCellValue: function(data) {
-                    return data.amountOnFood? data.amountOnFood: 0
+                calculateCellValue: function (data) {
+                    return data.amountOnFood ? data.amountOnFood : 0
                 }
             }, {
                 dataField: 'amountOnLiquor',
                 caption: 'Amount On Liquor',
                 dataType: 'number',
-                calculateCellValue: function(data) {
-                    return data.amountOnLiquor? data.amountOnLiquor: 0
+                calculateCellValue: function (data) {
+                    return data.amountOnLiquor ? data.amountOnLiquor : 0
                 }
             }, {
                 dataField: 'total',
                 caption: 'Total',
                 calculateCellValue: function (data) {
-                        var count = 0;
-                        if(data.amountOnBeer) {
-                            count = count + data.amountOnBeer;
-                        }
-                        if(data.amountOnFood) {
-                            count = count + data.amountOnFood;
-                        }
-                        if(data.amountOnLiquor) {
-                            count = count + data.amountOnLiquor
-                        }
-                        return count;
+                    var count = 0;
+                    if (data.amountOnBeer) {
+                        count = count + data.amountOnBeer;
+                    }
+                    if (data.amountOnFood) {
+                        count = count + data.amountOnFood;
+                    }
+                    if (data.amountOnLiquor) {
+                        count = count + data.amountOnLiquor
+                    }
+                    return count;
                 }
             }];
             return gridCols;
@@ -13003,6 +13904,7 @@
             }, {
                 dataField: 'phone',
                 caption: 'Phone',
+                dataType: 'number',
                 allowEditing: false,
                 calculateCellValue: function (data) {
                     var index = getIndexByArray(customers, '$id', data.customerSelected);

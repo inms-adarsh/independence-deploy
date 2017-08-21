@@ -51,9 +51,9 @@
 @import "core/scss/partials/plugins/nvd3.scss";
 @import "core/scss/partials/plugins/perfect-scrollbar.scss";
 @import "core/scss/partials/plugins/text-angular.scss";
+@import "core/directives/ms-card/templates/template-10/template-10.scss";
 @import "core/directives/ms-card/templates/template-1/template-1.scss";
 @import "core/directives/ms-card/templates/template-2/template-2.scss";
-@import "core/directives/ms-card/templates/template-10/template-10.scss";
 @import "core/directives/ms-card/templates/template-3/template-3.scss";
 @import "core/directives/ms-card/templates/template-4/template-4.scss";
 @import "core/directives/ms-card/templates/template-5/template-5.scss";
@@ -74,6 +74,8 @@
 @import "main/apps/bulkbuys/customers/views/dialogs/customer-dialog.scss";
 @import "main/apps/bulkbuys/customers/views/list-view/customers.scss";
 @import "main/apps/bulkbuys/views/list-view/sidenavs/main-sidenav.scss";
+@import "main/apps/records/offers/views/list-view/offers.scss";
+@import "main/apps/records/redeems/views/list-view/redeems.scss";
 @import "main/apps/records/views/list-view/sidenavs/main-sidenav.scss";
 @import "main/apps/shipments/views/list-view/sidenavs/main-sidenav.scss";
 @import "main/apps/vendings/views/list-view/sidenavs/main-sidenav.scss";
@@ -81,8 +83,12 @@
 @import "main/settings/taxgroups/views/list-view/sidenavs/main-sidenav.scss";
 @import "main/apps/bulkbuys/bookings/views/list-view/sidenavs/main-sidenav.scss";
 @import "main/apps/bulkbuys/customers/views/list-view/sidenavs/main-sidenav.scss";
+@import "main/apps/records/redeems/views/list-view/sidenavs/main-sidenav.scss";
 @import "quick-panel/quick-panel.scss";
 @import "toolbar/toolbar.scss";
+@import "navigation/layouts/horizontal-navigation/navigation.scss";
+@import "navigation/layouts/vertical-navigation/navigation.scss";
+@import "navigation/layouts/vertical-navigation-fullwidth-toolbar-2/navigation.scss";
 @import "main/admin/beers/beers.scss";
 @import "main/admin/containers/containers.scss";
 @import "main/admin/customers/customers.scss";
@@ -102,9 +108,6 @@
 @import "main/auth/tenant/tenant.scss";
 @import "main/settings/taxes/taxes.scss";
 @import "main/settings/taxgroups/taxgroups.scss";
-@import "navigation/layouts/horizontal-navigation/navigation.scss";
-@import "navigation/layouts/vertical-navigation/navigation.scss";
-@import "navigation/layouts/vertical-navigation-fullwidth-toolbar-2/navigation.scss";
 @import "quick-panel/tabs/activity/activity-tab.scss";
 @import "quick-panel/tabs/chat/chat-tab.scss";
 @import "quick-panel/tabs/today/today-tab.scss";
@@ -113,6 +116,8 @@
 @import "toolbar/layouts/vertical-navigation-fullwidth-toolbar-2/toolbar.scss";
 @import "main/apps/bulkbuys/bookings/bookings.scss";
 @import "main/apps/bulkbuys/customers/customers.scss";
+@import "main/apps/records/offers/offers.scss";
+@import "main/apps/records/redeems/redeems.scss";
 @import "main/admin/beers/views/list-view/beers.scss";
 @import "main/admin/containers/views/list-view/containers.scss";
 @import "main/admin/customers/views/dialogs/customer-dialog.scss";

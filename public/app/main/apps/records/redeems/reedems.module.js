@@ -3,10 +3,8 @@
     'use strict';
 
     angular
-        .module('app.records',
-            [   
-                'app.records.offers',
-                'app.records.redeems',
+        .module('app.records.redeems',
+            [
                 // 3rd Party Dependencies
                 'dx'
             ]
@@ -18,16 +16,16 @@
     {
         // State
         $stateProvider
-            .state('app.records', {
+            .state('app.records.redeems', {
                 abstract: true,
-                url     : '/records'
+                url     : '/redeems'
             })
-            .state('app.records.list', {
+            .state('app.records.redeems.list', {
                 url      : '/list',
                 views    : {
                     'content@app': {
-                        templateUrl: 'app/main/apps/records/views/list-view/records.html',
-                        controller : 'RecordsController as vm'
+                        templateUrl: 'app/main/apps/records/redeems/views/list-view/redeems.html',
+                        controller : 'RedeemsController as vm'
                     }
                 },
                  resolve : {
@@ -48,29 +46,25 @@
                         return adminService.getBeers();
                     }
                 },
-                bodyClass: 'records'
+                bodyClass: 'redeems'
             });
 
         // Translation
-        $translatePartialLoaderProvider.addPart('app/main/apps/records');
+        $translatePartialLoaderProvider.addPart('app/main/apps/records/redeems');
+
+        // Api
+        msApiProvider.register('redeems.dashboard', ['app/data/e-commerce/dashboard.json']);
+        msApiProvider.register('redeems.products', ['app/data/e-commerce/products.json']);
+        msApiProvider.register('redeems.product', ['app/data/e-commerce/product.json']);
+        msApiProvider.register('redeems.orders', ['app/data/e-commerce/orders.json']);
+        msApiProvider.register('redeems.statuses', ['app/data/e-commerce/statuses.json']);
+        msApiProvider.register('redeems.order', ['app/data/e-commerce/order.json']);
 
         // Navigation
-        msNavigationServiceProvider.saveItem('apps', {
-            title : 'Applications',
-            group : true,
-            weight: 1
-        });
 
-        // Navigation
-        msNavigationServiceProvider.saveItem('apps.hopheads', {
-            title : 'HopHeads',
-            group : true,
-            weight: 2
-        });
-
-        msNavigationServiceProvider.saveItem('apps.hopheads.records', {
-            title: 'Sales',
-            state: 'app.records.list'
+        msNavigationServiceProvider.saveItem('apps.hopheads.redeems', {
+            title: 'Offer Redemption History',
+            state: 'app.records.redeems.list'
         });
     }
 })();

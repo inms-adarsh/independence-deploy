@@ -47,9 +47,7 @@
                     label: {
                         text: 'Phone'
                     },
-                    editorOptions: {
-                        mask: '0000000000'
-                    },
+                    editorType: 'dxNumberBox',
                     validationRules: [{
                         type: 'required',
                         message: 'Phone number is required'
@@ -175,6 +173,13 @@
         function saveCustomer(customerObj) {
             var ref = rootRef.child('tenant-customers').child(tenantId);
             customerObj.membersSince = customerObj.membersSince.toString();
+            if(customerObj.anniversary) {
+                customerObj.anniversary = customerObj.anniversary.toString();
+            }
+             if (!customerObj.date) {
+                customerObj.date = new Date();
+            }
+            customerObj.date = customerObj.date.toString();
             customerObj.user = auth.$getAuth().uid;
             return firebaseUtils.addData(ref, customerObj);
         }

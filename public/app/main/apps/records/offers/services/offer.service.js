@@ -2,20 +2,20 @@
     'use strict';
 
     angular
-        .module('app.bulkbuys.customers')
-        .factory('BulkbuyCustomerService', customerService);
+        .module('app.records.offers')
+        .factory('OfferService', OfferService);
 
     /** @ngInject */
-    function customerService($firebaseArray, $firebaseObject, $q, authService, auth, msUtils, firebaseUtils, dxUtils, config) {
+    function OfferService($firebaseArray, $firebaseObject, $q, authService, auth, msUtils, firebaseUtils, dxUtils, config) {
         var tenantId = authService.getCurrentTenant();
         // Private variables
 
         var service = {
             formOptions: formOptions,
-            saveCustomer: saveCustomer,
-            updateCustomer: updateCustomer,
-            deleteCustomer: deleteCustomer,
-            fetchCustomerList: fetchCustomerList
+            saveOffer: saveOffer,
+            updateOffer: updateOffer,
+            deleteOffer: deleteOffer,
+            fetchOfferList: fetchOfferList
         };
 
         var quantityList = [{
@@ -42,7 +42,7 @@
                 minColWidth: 233,
                 colCount: "auto",
                 labelLocation: "top",
-                validationGroup: "customerData",
+                validationGroup: "offerData",
                 items: [{
                     dataField: 'name',
                     caption: 'Name',
@@ -91,42 +91,46 @@
 
         /**
          * Save form data
-         * @returns {Object} Customer Form data
+         * @returns {Object} Offer Form data
          */
-        function saveCustomer(customerObj) {
-            var ref = rootRef.child('tenant-bulkbuy-customers').child(tenantId);
-            customerObj.user = auth.$getAuth().uid;
-            if (!customerObj.date) {
-                customerObj.date = new Date();
+        function saveOffer(offerObj) {
+            var ref = rootRef.child('tenant-record-offers').child(tenantId);
+            offerObj.user = auth.$getAuth().uid;
+            if (!offerObj.date) {
+                offerObj.date = new Date();
             }
-            customerObj.date = customerObj.date.toString();
-            return firebaseUtils.addData(ref, customerObj);
+
+            if(offerObj.expiryDate) {
+                offerObj.expiryDate = offerObj.expiryDate.toString();
+            }
+            offerObj.date = offerObj.date.toString();
+            return firebaseUtils.addData(ref, offerObj);
         }
 
         /**
-         * Fetch customer list
-         * @returns {Object} Customer data
+         * Fetch offer list
+         * @returns {Object} Offer data
          */
-        function fetchCustomerList() {
-            var ref = rootRef.child('tenant-bulkbuy-customers').child(tenantId).orderByChild('deactivated').equalTo(null);
+        function fetchOfferList() {
+            var ref = rootRef.child('tenant-record-offers').child(tenantId).orderByChild('deactivated').equalTo(null);
             return firebaseUtils.fetchList(ref);
         }
 
         /**
-         * Fetch customer list
-         * @returns {Object} Customer data
+         * Fetch offer list
+         * @returns {Object} Offer data
          */
-        function updateCustomer(key, customerData) {
-            var ref = rootRef.child('tenant-bulkbuy-customers').child(tenantId).child(key['$id']);
-            return firebaseUtils.updateData(ref, customerData);
+        function updateOffer(key, offerData) {
+            var ref = rootRef.child('tenant-record-offers').child(tenantId).child(key['$id']);
+            return firebaseUtils.updateData(ref, offerData);
         }
 
         /**
-         * Delete Customer
-         * @returns {Object} customer data
+         * Delete Offer
+         * @returns {Object} offer data
          */
-        function deleteCustomer(key) {
-            var ref = rootRef.child('tenant-bulkbuy-customers').child(tenantId).child(key['$id']);
+        function deleteOffer(key) {
+            var ref = rootRef.child('tenant-record-offers').child(tenantId).child(key['$id']);
             return firebaseUtils.updateData(ref, { deactivated: false });
         }
 

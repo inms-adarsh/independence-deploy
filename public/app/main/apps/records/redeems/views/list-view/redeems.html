@@ -1,12 +1,12 @@
-<div class="page-layout carded left-sidenav single-scroll" id="bulkbuys" layout="row">
+<div class="page-layout carded left-sidenav single-scroll" id="redeems" layout="row">
 
     <!-- TOP BACKGROUND -->
     <div class="top-bg md-accent-bg"></div>
     <!-- / TOP BACKGROUND -->
-
-    <!-- SIDENAV -->
+    
+        <!-- SIDENAV -->
     <!--<md-sidenav class="sidenav" md-is-locked-open="$mdMedia('gt-md')" md-component-id="sidenav"
-     ng-include="'app/main/apps/bulkbuys/views/list-view/sidenavs/main-sidenav.html'" ms-scroll
+     ng-include="'app/main/apps/redeems/views/list-view/sidenavs/main-sidenav.html'" ms-scroll
                 ms-sidenav-helper>
 
     </md-sidenav>-->
@@ -22,41 +22,32 @@
                 <span class="logo-icon">
                     <md-icon md-font-icon="icon-email" class="icon"></md-icon>
                 </span>
-                <span class="logo-text" translate="BULKBUY.TITLE"></span>
+                <span class="logo-text" translate="REDEEM.TITLE"></span>
             </div>
 
         </div>
         <!-- / CONTENT HEADER -->
-
+      
         <!-- CONTENT CARD -->
         <div class="content-card">
 
-
+            
             <!-- CONTENT TOOLBAR -->
             <!-- / CONTENT TOOLBAR -->
             <!-- CONTENT -->
             <md-content class="content" ms-scroll flex>
 
                 <!-- DEMO CONTENT -->
-                <div id="bulkbuy-grid" dx-data-grid="vm.bulkbuyGridOptions"></div>
+                <div id="redeem-grid" dx-data-grid="vm.redeemGridOptions"></div>
                 <!-- / DEMO CONTENT -->
-                <div class="popup" dx-popup="popupOptions">
-                    <div data-options="dxTemplate: { name:'info' }">
-                        <div dx-form="vm.bulkgridForm"></div>
-                        </br>
-                        <div style="text-align:center">
-                            <div dx-button="saveNewBttonOptions"></div>
-                            <div dx-button="buttonOptions"></div>
-                        </div>
-                    </div>
-                </div>
+
             </md-content>
             <!-- / CONTENT -->
 
-            </div>
-            <!-- / CONTENT CARD -->
-
         </div>
-        <!-- / CENTER -->
+        <!-- / CONTENT CARD -->
 
     </div>
+    <!-- / CENTER -->
+
+</div>

@@ -47,7 +47,7 @@
         $translatePartialLoaderProvider.addPart('app/main/apps/shipments');
 
       
-        msNavigationServiceProvider.saveItem('apps.shipments', {
+        msNavigationServiceProvider.saveItem('shipments', {
             title: 'Shipments',
             state: 'app.shipments.list'
         });

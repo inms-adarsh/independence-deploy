@@ -102,10 +102,16 @@
                         },
                         onValueChanged: function (e) {
                             if (e.value) {
-                                var ref = rootRef.child('tenant-customer-bulkbuy-records').child(tenantId).child(e.value).child('balancedQuantity');
-                                firebaseUtils.getItemByRef(ref).then(function (data) {
-                                    formInstance.getEditor('quantity').option('max', data.$value);
-                                    formInstance.getEditor('balancedUnits').option('value', data.$value);
+                                var ref = rootRef.child('tenant-customer-bulkbuy-records').child(tenantId).child(e.value).child('records').orderByChild('deactivated').equalTo(null);
+                                firebaseUtils.fetchList(ref).then(function (data) {
+                                    var sum = 0;
+                                    data.forEach(function (record) {
+                                        if (new Date(record.expiryDate).getTime() > new Date().getTime()) {
+                                            sum += record['balancedQuantity'];
+                                        }
+                                    });
+                                    formInstance.getEditor('quantity').option('max', sum);
+                                    formInstance.getEditor('balancedUnits').option('value', sum);
                                 });
                             } else {
                                 formInstance.itemOption('balancedUnits', 'visible', false);
@@ -127,12 +133,12 @@
                     validationRules: [{
                         type: 'required',
                         message: 'Please select a quantity'
-                    }, { 
-                        type: 'pattern', 
-                        pattern: '^[1-9][0-9]*$', 
-                        message: 'Value must be more then 0' 
+                    }, {
+                        type: 'pattern',
+                        pattern: '^[1-9][0-9]*$',
+                        message: 'Value must be more then 0'
                     }
-]
+                    ]
                 }, {
                     label: {
                         text: 'Balance Units'
@@ -216,7 +222,6 @@
             bookingObj.date = bookingObj.date.toString();
             bookingObj.balancedUnits = bookingObj.balancedUnits - bookingObj.quantity;
             firebaseUtils.addData(ref, bookingObj).then(function (key) {
-                ;
                 var mergeObj = {};
                 mergeObj['tenant-bulkbuy-bookings-records/' + tenantId + '/' + bookingObj.customerSelected + '/records/' + key] = bookingObj;
                 mergeObj['tenant-customer-bulkbuy-records/' + tenantId + '/' + bookingObj.customerSelected + '/balancedQuantity'] = bookingObj.balancedUnits;
@@ -229,10 +234,17 @@
         function updateBalanceQuantity(bookingObj) {
             var ref = rootRef.child('tenant-customer-bulkbuy-records').child(tenantId).child(bookingObj.customerSelected).child('records').orderByChild('deactivated').equalTo(null);
             firebaseUtils.fetchList(ref).then(function (data) {
-                var sortedArray = data.sort(function (a, b) { return new Date(a.date) - new Date(b.date) });
+                var sortedArray = data.sort(function (a, b) { return new Date(a.date) - new Date(b.date) }),
+                    filteredArray = [];
+
+                sortedArray.forEach(function (value) {
+                    if(new Date(value.expiryDate).getTime() > new Date().getTime()) {
+                        filteredArray.push(value);
+                    }
+                });
                 var allowedSum = bookingObj.quantity;
                 var mergeObj = {};
-                sortedArray.forEach(function (elem, index) {
+                filteredArray.forEach(function (elem, index) {
                     if (elem.balancedQuantity !== 0 && allowedSum !== 0) {
                         if (elem.balancedQuantity > allowedSum) {
                             elem.balancedQuantity = elem.balancedQuantity - allowedSum;
@@ -302,13 +314,13 @@
                         if (allowedSum !== 0) {
                             if (elem.balancedQuantity < quantityList[elem.quantity].quantity) {
                                 var diff = quantityList[elem.quantity].quantity - elem.balancedQuantity;
-                                if(allowedSum > diff) {
+                                if (allowedSum > diff) {
                                     elem.balancedQuantity = elem.balancedQuantity + diff;
                                     allowedSum = allowedSum - diff;
-                                } else if(allowedSum === diff) {
+                                } else if (allowedSum === diff) {
                                     elem.balancedQuantity = elem.balancedQuantity + allowedSum;
                                     allowedSum = 0;
-                                } else if(allowedSum < diff) {
+                                } else if (allowedSum < diff) {
                                     elem.balancedQuantity = elem.balancedQuantity + allowedSum;
                                     allowedSum = 0;
                                 }

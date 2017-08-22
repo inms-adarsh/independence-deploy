@@ -29,7 +29,7 @@
                     mode: 'virtual'
                 },
                 headerFilter: {
-                    visible: false
+                    visible: true
                 },
                 searchPanel: {
                     visible: true,
@@ -55,11 +55,12 @@
                 showColumnLines: false,
                 showRowLines: true,
                 showBorders: false,
-                rowAlternationEnabled: true,
+                rowAlternationEnabled: false,
                 columnAutoWidth: true,
                 sorting: {
-                    mode: 'none'
-                }
+                    mode: 'multiple'
+                },
+                height: 520
             };
             return gridOptions;
 

@@ -129,29 +129,14 @@
          * Grid Options for redeem list
          * @param {Object} dataSource 
          */
-        function gridOptions(dataSource, customers, beers) {
+        function gridOptions(dataSource, customers, beers, offers) {
             var gridOptions = dxUtils.createGrid(),
                 otherConfig = {
                     dataSource: {
                         load: function () {
                             var defer = $q.defer();
                             fetchRedeemList().then(function (data) {
-                                var hist = [];
-
-                                for (var i = 0; i < data.length; i++) {
-                                    if (data[i].customers) {
-                                        for(var j = 0; j < data[i].customers.length; i++) {
-                                            var obj = {
-                                                customerSelected: (data[i].customers)[j].id,
-                                                invoice: (data[i].customers)[j].invoice,
-                                                offer: data[i].$id
-                                            }
-                                            hist.push(obj);
-                                        }
-                                    }
-                                }
-                                console.log(hist);
-                                defer.resolve(hist);
+                                defer.resolve(data);
                             });
                             return defer.promise;
                         },
@@ -198,7 +183,7 @@
                         mode: 'form',
                         form: redeemForm(customers, beers)
                     },
-                    columns: config.redeemGridCols(tenantId, customers, beers),
+                    columns: config.redeemGridCols(tenantId, customers, beers, offers),
                     export: {
                         enabled: true,
                         fileName: 'Redeems',
@@ -251,7 +236,7 @@
          * @returns {Object} Redeem data
          */
         function fetchRedeemList() {
-            var ref = rootRef.child('tenant-record.offers').child(tenantId).orderByChild('deactivated').equalTo(null);
+            var ref = rootRef.child('tenant-redeems').child(tenantId).orderByChild('deactivated').equalTo(null);
             return firebaseUtils.fetchList(ref);
         }
 

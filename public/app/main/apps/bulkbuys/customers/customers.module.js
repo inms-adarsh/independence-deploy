@@ -56,9 +56,10 @@
 
         // Navigation
 
-        msNavigationServiceProvider.saveItem('apps.bulkbuys.customers', {
+        msNavigationServiceProvider.saveItem('bulkbuys.customers', {
             title: 'Registrations',
-            state: 'app.bulkbuys.customers.list'
+            state: 'app.bulkbuys.customers.list',
+            icon: 'icon-person-plus'
         });
     }
 })();

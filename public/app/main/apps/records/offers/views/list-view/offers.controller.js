@@ -72,7 +72,7 @@
                         }],
                         editorType: 'dxNumberBox'
                     }, {
-                        dataField: 'expirydate',
+                        dataField: 'expiryDate',
                         caption: 'Expires on',
                         dataType: 'date'
                     }],
@@ -97,6 +97,10 @@
                         }
 
                         e.cancel = d.promise();
+                    },
+                    onRowPrepared: function (info) {
+                        if (info.rowType == 'data' && new Date(info.data.expiryDate).getTime() < new Date().getTime())
+                            info.rowElement.addClass("md-red-50-bg");
                     }
                 };
 

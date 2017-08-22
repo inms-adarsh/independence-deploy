@@ -45,6 +45,9 @@
                     }],
                     beers: ["adminService", function(adminService) {
                         return adminService.getBeers();
+                    }],
+                    offers: ["adminService", function(adminService) {
+                        return adminService.getCurrentOffers();
                     }]
                 },
                 bodyClass: 'redeems'
@@ -63,9 +66,11 @@
 
         // Navigation
 
-        msNavigationServiceProvider.saveItem('apps.hopheads.redeems', {
+        msNavigationServiceProvider.saveItem('hopheads.redeems', {
             title: 'Offer Redemption History',
-            state: 'app.records.redeems.list'
+            state: 'app.records.redeems.list',
+            weight: 4,
+            icon: 'icon-history'
         });
     }
 })();
@@ -73,13 +78,13 @@
 {
     'use strict';
 
-    RedeemsController.$inject = ["$state", "$scope", "$mdDialog", "$document", "redeemService", "customers", "beers"];
+    RedeemsController.$inject = ["$state", "$scope", "$mdDialog", "$document", "redeemService", "customers", "beers", "offers"];
     angular
         .module('app.records.redeems')
         .controller('RedeemsController', RedeemsController);
 
     /** @ngInject */
-    function RedeemsController($state, $scope, $mdDialog, $document, redeemService, customers, beers)
+    function RedeemsController($state, $scope, $mdDialog, $document, redeemService, customers, beers, offers)
     {
         var vm = this;
 
@@ -90,7 +95,7 @@
         //////////
 
         function init() {
-            vm.redeemGridOptions = redeemService.gridOptions('vm.redeems', customers, beers);
+            vm.redeemGridOptions = redeemService.gridOptions('vm.redeems', customers, beers, offers);
         }
 
     }
@@ -154,9 +159,11 @@
 
         // Navigation
 
-        msNavigationServiceProvider.saveItem('apps.hopheads.offers', {
+        msNavigationServiceProvider.saveItem('hopheads.offers', {
             title: 'Offers',
-            state: 'app.records.offers.list'
+            state: 'app.records.offers.list',
+            weight: 3,
+            icon: 'icon-barcode'
         });
     }
 })();
@@ -235,7 +242,7 @@
                         }],
                         editorType: 'dxNumberBox'
                     }, {
-                        dataField: 'expirydate',
+                        dataField: 'expiryDate',
                         caption: 'Expires on',
                         dataType: 'date'
                     }],
@@ -260,6 +267,10 @@
                         }
 
                         e.cancel = d.promise();
+                    },
+                    onRowPrepared: function (info) {
+                        if (info.rowType == 'data' && new Date(info.data.expiryDate).getTime() < new Date().getTime())
+                            info.rowElement.addClass("md-red-50-bg");
                     }
                 };
 
@@ -368,9 +379,10 @@
 
         // Navigation
 
-        msNavigationServiceProvider.saveItem('apps.bulkbuys.customers', {
+        msNavigationServiceProvider.saveItem('bulkbuys.customers', {
             title: 'Registrations',
-            state: 'app.bulkbuys.customers.list'
+            state: 'app.bulkbuys.customers.list',
+            icon: 'icon-person-plus'
         });
     }
 })();
@@ -614,9 +626,11 @@
 
         // Navigation
 
-        msNavigationServiceProvider.saveItem('apps.hopheads.customers', {
+        msNavigationServiceProvider.saveItem('hopheads.customers', {
             title: 'Registrations',
-            state: 'app.customers.list'
+            state: 'app.customers.list',
+            weight: 1,
+            icon: 'icon-person-plus'
         });
     }
 })();
@@ -939,1866 +953,6 @@
 
         function init() {
             vm.taxGridOptions = taxService.gridOptions('vm.taxes');
-        }
-
-    }
-})();
-(function ()
-{
-    'use strict';
-
-    config.$inject = ["$stateProvider", "$translatePartialLoaderProvider", "msApiProvider", "msNavigationServiceProvider"];
-    angular
-        .module('app.vendings',
-            [
-                // 3rd Party Dependencies
-                'dx'
-            ]
-        )
-        .config(config);
-
-    /** @ngInject */
-    function config($stateProvider, $translatePartialLoaderProvider, msApiProvider, msNavigationServiceProvider)
-    {
-        // State
-        $stateProvider
-            .state('app.vendings', {
-                abstract: true,
-                url     : '/vendings'
-            })
-            .state('app.vendings.list', {
-                url      : '/list',
-                views    : {
-                    'content@app': {
-                        templateUrl: 'app/main/apps/vendings/views/list-view/vendings.html',
-                        controller : 'VendingsController as vm'
-                    }
-                },
-                 resolve : {
-                    currentAuth: ["auth", function (auth) {
-                        // returns a promisse so the resolve waits for it to complete
-                        return auth.$requireSignIn();
-                    }],
-                    tenantInfo: ["auth", "authService", function(auth, authService){
-                        return authService.retrieveTenant();
-                    }],
-                    settings: ["adminService", function(adminService) {
-                        return adminService.getCurrentSettings();
-                    }],
-                    customers: ["adminService", function(adminService) {
-                        return adminService.getCurrentCustomers();
-                    }],
-                    beers: ["adminService", function(adminService) {
-                        return adminService.getBeers();
-                    }]
-                },
-                bodyClass: 'vendings'
-            });
-
-        // Translation
-        $translatePartialLoaderProvider.addPart('app/main/apps/vendings');
-
-        // Navigation
-        msNavigationServiceProvider.saveItem('apps', {
-            title : 'Applications',
-            group : true,
-            weight: 1
-        });
-
-        msNavigationServiceProvider.saveItem('apps.vendings', {
-            title: 'Vendings',
-            state: 'app.vendings.list'
-        });
-    }
-})();
-(function () {
-    'use strict';
-
-    VendingsController.$inject = ["$state", "$scope", "$q", "$mdDialog", "$document", "firebaseUtils", "authService", "vendingService", "config", "customers", "beers", "dxUtils"];
-    angular
-        .module('app.vendings')
-        .controller('VendingsController', VendingsController);
-
-    /** @ngInject */
-    function VendingsController($state, $scope, $q, $mdDialog, $document, firebaseUtils, authService, vendingService, config, customers, beers, dxUtils) {
-        var vm = this,
-            brewGridInstance,
-            vendorGridInstance,
-            tenantId = authService.getCurrentTenant();
-
-        // Data
-
-        // Methods
-        init();
-        //////////
-
-        function init() {
-            //vm.vendingGridOptions = vendingService.gridOptions('vm.vendings', customers, beers);
-            //vm.brewDataGridOptions = vendingService.brewGrid(beers);
-            vm.brewDataSource = [];
-        }
-
-        $scope.$on('VendorFormInitialized', function (event, data) {
-        });
-
-        /**
-         * Sub Grid
-         */
-        vm.brewDataGridOptions = dxUtils.createGrid();
-        var otherConfig = {
-            dataSource: {
-                load: function (options) {
-                    var defer = $q.defer();
-                    vendingService.fetchInvoiceVendingList(vm.currentRowKey).then(function (data) {
-                        defer.resolve(data);
-                    });
-                    return defer.promise;
-                },
-                insert: function (vendingObj) {
-                    vendingObj.invoice = vm.currentRowKey;
-                    vendingService.saveInvoiceVending(vendingObj);
-                },
-                update: function (key, vendingObj) {
-                    vendingObj.invoice = vm.currentRowKey;
-                    vendingService.updateInvoiceVending(key, vendingObj);
-                },
-                remove: function (key) {
-                    vendingService.deleteInvoiceVending(key, vm.currentRowKey);
-                }
-            },
-            columns: [{
-                dataField: 'beerSelected',
-                label: {
-                    text: 'Brew'
-                },
-                lookup: {
-                    dataSource: beers,
-                    displayExpr: "name",
-                    valueExpr: "$id"
-                },
-                validationRules: [{
-                    type: 'required',
-                    message: 'Please select a brew'
-                }]
-            }, {
-                dataField: 'quantity',
-                caption: 'Units (Per unit 0.5 Ltr)',
-                dataType: 'number',
-                validationRules: [{
-                    type: 'required',
-                    message: 'Please select a quantity'
-                }]
-            }],
-            searchPanel: {
-                visible: false
-            },
-            columnChooser: {
-                enabled: false
-            },
-            editing: {
-                allowAdding: true,
-                allowUpdating: true,
-                allowDeleting: true,
-                mode: 'batch'
-            },
-            onContentReady: function (e) {
-                brewGridInstance = e.component;
-            },
-            showBorders: true
-        };
-        angular.extend(vm.brewDataGridOptions, otherConfig);
-
-
-        /**
-         * Main Grid
-         */
-        vm.vendingGridOptions = {
-            dataSource: {
-                load: function (options) {
-                    var defer = $q.defer();
-                    vendingService.fetchVendingList().then(function (data) {
-                        defer.resolve(data);
-                    });
-                    return defer.promise;
-                },
-                insert: function (vendingObj) {
-                    vendingService.saveVending(vendingObj);
-                },
-                update: function (key, vendingObj) {
-                    vendingService.updateVending(key, vendingObj);
-                },
-                remove: function (key) {
-                    vendingService.deleteVending(key);
-                }
-            },
-            summary: {
-                totalItems: [{
-                    column: 'name',
-                    summaryType: 'count'
-                }]
-            },
-            editing: {
-                allowAdding: true,
-                allowUpdating: true,
-                allowDeleting: true,
-                mode: 'form',
-                form: vendingService.vendingForm(customers, beers)
-            },
-            columns: config.vendingGridCols(tenantId, customers, beers),
-            export: {
-                enabled: true,
-                fileName: 'Vendings',
-                allowExportSelectedData: true
-            },
-            onEditorPrepared: function (e) {
-                if (e.row && e.row.data && e.row.data.$id) {
-                    vm.brewDataSource = e.row.data.brews;
-                    vm.editMode = true;
-                } else {
-                    vm.brewDataSource = [];
-                    vm.editMode = false;
-                }
-            }, loadPanel: {
-                enabled: true
-            },
-            onRowExpanded: function(e) {
-                if(e.key) {
-                    vm.currentRowKey = e.key.$id;
-                }
-            },
-            scrolling: {
-                mode: 'virtual'
-            },
-            headerFilter: {
-                visible: false
-            },
-            searchPanel: {
-                visible: true,
-                width: 240,
-                placeholder: 'Search...'
-            },
-            columnChooser: {
-                enabled: true
-            },
-            onContentReady: function (e) {
-                vendorGridInstance = e.component;
-                e.component.option('loadPanel.enabled', false);
-            },
-            showColumnLines: false,
-            showRowLines: true,
-            showBorders: false,
-            rowAlternationEnabled: true,
-            columnAutoWidth: true,
-            sorting: {
-                mode: 'none'
-            },
-            masterDetail: {
-                enabled: true,
-                template: "brewTemplate"
-            }
-        };
-
-        vm.brewDataSource = new DevExpress.data.CustomStore();
-    }
-})();
-(function ()
-{
-    'use strict';
-
-    config.$inject = ["$stateProvider", "$translatePartialLoaderProvider", "msApiProvider", "msNavigationServiceProvider"];
-    angular
-        .module('app.shipments',
-            [
-                // 3rd Party Dependencies
-                'dx'
-            ]
-        )
-        .config(config);
-
-    /** @ngInject */
-    function config($stateProvider, $translatePartialLoaderProvider, msApiProvider, msNavigationServiceProvider)
-    {
-        // State
-        $stateProvider
-            .state('app.shipments', {
-                abstract: true,
-                url     : '/shipments'
-            })
-            .state('app.shipments.list', {
-                url      : '/list',
-                views    : {
-                    'content@app': {
-                        templateUrl: 'app/main/apps/shipments/views/list-view/shipments.html',
-                        controller : 'ShipmentsController as vm'
-                    }
-                },
-                 resolve : {
-                    currentAuth: ["auth", function (auth) {
-                        // returns a promisse so the resolve waits for it to complete
-                        return auth.$requireSignIn();
-                    }],
-                    tenantInfo: ["auth", "authService", function(auth, authService){
-                        return authService.retrieveTenant();
-                    }],
-                    settings: ["adminService", function(adminService) {
-                        return adminService.getCurrentSettings();
-                    }]
-                },
-                bodyClass: 'shipments'
-            });
-
-        // Translation
-        $translatePartialLoaderProvider.addPart('app/main/apps/shipments');
-
-      
-        msNavigationServiceProvider.saveItem('apps.shipments', {
-            title: 'Shipments',
-            state: 'app.shipments.list'
-        });
-    }
-})();
-(function ()
-{
-    'use strict';
-
-    ShipmentsController.$inject = ["$state", "$scope", "$mdDialog", "$document", "shipmentService"];
-    angular
-        .module('app.shipments')
-        .controller('ShipmentsController', ShipmentsController);
-
-    /** @ngInject */
-    function ShipmentsController($state, $scope, $mdDialog, $document, shipmentService)
-    {
-        var vm = this;
-
-        // Data
-        
-        // Methods
-        init();
-        //////////
-
-        function init() {
-            vm.shipmentGridOptions = shipmentService.gridOptions('vm.shipments');
-        }
-
-    }
-})();
-(function ()
-{
-    'use strict';
-
-    config.$inject = ["$stateProvider", "$translatePartialLoaderProvider", "msApiProvider", "msNavigationServiceProvider"];
-    angular
-        .module('app.records',
-            [   
-                'app.records.offers',
-                'app.records.redeems',
-                // 3rd Party Dependencies
-                'dx'
-            ]
-        )
-        .config(config);
-
-    /** @ngInject */
-    function config($stateProvider, $translatePartialLoaderProvider, msApiProvider, msNavigationServiceProvider)
-    {
-        // State
-        $stateProvider
-            .state('app.records', {
-                abstract: true,
-                url     : '/records'
-            })
-            .state('app.records.list', {
-                url      : '/list',
-                views    : {
-                    'content@app': {
-                        templateUrl: 'app/main/apps/records/views/list-view/records.html',
-                        controller : 'RecordsController as vm'
-                    }
-                },
-                 resolve : {
-                    currentAuth: ["auth", function (auth) {
-                        // returns a promisse so the resolve waits for it to complete
-                        return auth.$requireSignIn();
-                    }],
-                    tenantInfo: ["auth", "authService", function(auth, authService){
-                        return authService.retrieveTenant();
-                    }],
-                    settings: ["adminService", function(adminService) {
-                        return adminService.getCurrentSettings();
-                    }],
-                    customers: ["adminService", function(adminService) {
-                        return adminService.getCurrentCustomers();
-                    }],
-                    beers: ["adminService", function(adminService) {
-                        return adminService.getBeers();
-                    }]
-                },
-                bodyClass: 'records'
-            });
-
-        // Translation
-        $translatePartialLoaderProvider.addPart('app/main/apps/records');
-
-        // Navigation
-        msNavigationServiceProvider.saveItem('apps', {
-            title : 'Applications',
-            group : true,
-            weight: 1
-        });
-
-        // Navigation
-        msNavigationServiceProvider.saveItem('apps.hopheads', {
-            title : 'HopHeads',
-            group : true,
-            weight: 2
-        });
-
-        msNavigationServiceProvider.saveItem('apps.hopheads.records', {
-            title: 'Sales',
-            state: 'app.records.list'
-        });
-    }
-})();
-(function ()
-{
-    'use strict';
-
-    RecordsController.$inject = ["$state", "$scope", "$mdDialog", "$document", "recordService", "customers", "beers"];
-    angular
-        .module('app.records')
-        .controller('RecordsController', RecordsController);
-
-    /** @ngInject */
-    function RecordsController($state, $scope, $mdDialog, $document, recordService, customers, beers)
-    {
-        var vm = this;
-
-        // Data
-        
-        // Methods
-        init();
-        //////////
-
-        function init() {
-            vm.recordGridOptions = recordService.gridOptions('vm.records', customers, beers);
-        }
-
-    }
-})();
-(function () {
-    'use strict';
-
-    redeemService.$inject = ["$firebaseArray", "$firebaseObject", "$q", "authService", "auth", "firebaseUtils", "dxUtils", "config"];
-    angular
-        .module('app.records.redeems')
-        .factory('redeemService', redeemService);
-
-    /** @ngInject */
-    function redeemService($firebaseArray, $firebaseObject, $q, authService, auth, firebaseUtils, dxUtils, config) {
-        var tenantId = authService.getCurrentTenant(),
-            formInstance;
-        // Private variables
-
-        var service = {
-            gridOptions: gridOptions,
-            saveRedeem: saveRedeem,
-            updateRedeem: updateRedeem,
-            fetchRedeemList: fetchRedeemList,
-            redeemForm: redeemForm
-        };
-
-        return service;
-
-        //////////
-
-        function redeemForm(customerList, beerList) {
-            var redeemForm = {
-                onInitialized: function (e) {
-                    formInstance = e.component;
-                },
-                items: [{
-                    itemType: "group",
-                    caption: "Information",
-                    colSpan: 2,
-                    colCount: 2,
-                    items: [
-                        {
-                            dataField: 'date',
-                            label: {
-                                text: 'Date'
-                            },
-                            editorType: 'dxDateBox',
-                            editorOptions: {
-                                width: '100%',
-                                onInitialized: function (e) {
-                                    e.component.option('value', new Date());
-                                }
-                            },
-                            validationRules: [{
-                                type: 'required',
-                                message: 'Date is required'
-                            }]
-                        }, {
-                            dataField: 'invoice',
-                            label: {
-                                text: 'Invoice'
-                            },
-                            validationRules: [{
-                                type: 'required',
-                                message: 'Invoice number is required'
-                            }]
-                        }, {
-                            dataField: 'customerSelected',
-                            label: {
-                                text: 'Customer'
-                            },
-                            editorType: 'dxSelectBox',
-                            editorOptions: {
-                                dataSource: customerList,
-                                displayExpr: "name",
-                                valueExpr: "$id",
-                                searchExpr: ["name", "phone", "HHID"],
-                                itemTemplate: function (itemData, itemIndex, itemElement) {
-                                    var rightBlock = $("<div style='display:inline-block;'>");
-                                    rightBlock.append("<p style='font-size:larger;'><b>" + itemData.name + "</b></p>");
-                                    rightBlock.append("<p>Phone: <span>" + itemData.phone + "</span></p>");
-                                    rightBlock.append("<p>HopHead ID: <span>" + itemData.HHID + "</span></p>");
-                                    itemElement.append(rightBlock);
-                                }, onSelectionChanged: function (customer) {
-                                    if (customer.selectedItem && customer.selectedItem.$id) {
-                                        formInstance.getEditor('offers').option('items', '');
-                                        var ref = rootRef.child('tenant-redeem-offers').child(tenantId).orderByChild('deactivated').equalTo(null);
-                                        firebaseUtils.fetchList(ref).then(function (data) {
-                                            var selectedList = [];
-                                            for (var item = 0; item < data.length; item++) {
-                                                if (data[item].customers && (!data[item].customers.hasOwnProperty(customer.selectedItem.$id) || data[item].customers[customer.selectedItem.$id] === false)) {
-                                                    selectedList.push(data[item]);
-                                                } else if (!data[item].customers) {
-                                                    selectedList.push(data[item]);
-                                                }
-                                            }
-                                            formInstance.getEditor('offers').option('items', selectedList);
-                                        });
-                                    }
-                                }
-                            },
-                            validationRules: [{
-                                type: 'required',
-                                message: 'Please select a customer'
-                            }]
-                        }, 'amountOnBeer', 'amountOnLiquor', 'amountOnFood'
-                    ]
-                },
-                {
-                    itemType: "group",
-                    caption: "Redeem Offers",
-                    colSpan: 2,
-                    colCount: 2,
-                    items: [{
-                        dataField: 'offers',
-                        label: {
-                            text: 'Select Offers'
-                        },
-                        name: 'offers',
-                        editorOptions: {
-                            displayExpr: "description",
-                            valueExpr: "$id",
-                            noDataText: 'No offers available',
-                            showSelectionControls: true,
-                            applyValueMode: "useButtons"
-                        },
-                        editorType: 'dxTagBox'
-                    }]
-                }]
-            };
-            return redeemForm;
-        }
-        /**
-         * Grid Options for redeem list
-         * @param {Object} dataSource 
-         */
-        function gridOptions(dataSource, customers, beers) {
-            var gridOptions = dxUtils.createGrid(),
-                otherConfig = {
-                    dataSource: {
-                        load: function () {
-                            var defer = $q.defer();
-                            fetchRedeemList().then(function (data) {
-                                var hist = [];
-
-                                for (var i = 0; i < data.length; i++) {
-                                    if (data[i].customers) {
-                                        for(var j = 0; j < data[i].customers.length; i++) {
-                                            var obj = {
-                                                customerSelected: (data[i].customers)[j].id,
-                                                invoice: (data[i].customers)[j].invoice,
-                                                offer: data[i].$id
-                                            }
-                                            hist.push(obj);
-                                        }
-                                    }
-                                }
-                                console.log(hist);
-                                defer.resolve(hist);
-                            });
-                            return defer.promise;
-                        },
-                        insert: function (redeemObj) {
-                            var data = formInstance.option('formData');
-                            if (data.offers) {
-                                redeemObj.offers = data.offers;
-                            }
-                            saveRedeem(redeemObj);
-                        },
-                        update: function (key, redeemObj) {
-                            var data = formInstance.option('formData');
-                            if (data.offers) {
-                                redeemObj.offers = data.offers;
-                            }
-                            updateRedeem(key, redeemObj);
-                        },
-                        remove: function (key) {
-                            deleteRedeem(key);
-                        }
-                    },
-                    summary: {
-                        totalItems: [{
-                            column: 'amountOnLiquor',
-                            summaryType: 'sum'
-                        }, {
-                            column: 'amountOnBeer',
-                            summaryType: 'sum'
-                        }, {
-                            column: 'amountOnFood',
-                            summaryType: 'sum'
-                        }, {
-                            column: 'total',
-                            summaryType: 'sum',
-                            customizeText: function (data) {
-                                return 'Total ' + data.value;
-                            }
-                        }]
-                    },
-                    editing: {
-                        allowAdding: false,
-                        allowUpdating: false,
-                        allowDeleting: false,
-                        mode: 'form',
-                        form: redeemForm(customers, beers)
-                    },
-                    columns: config.redeemGridCols(tenantId, customers, beers),
-                    export: {
-                        enabled: true,
-                        fileName: 'Redeems',
-                        allowExportSelectedData: true
-                    }
-
-                };
-
-            angular.extend(gridOptions, otherConfig);
-            return gridOptions;
-        };
-
-        /**
-         * Save form data
-         * @returns {Object} Redeem Form data
-         */
-        function saveRedeem(redeemObj) {
-            var ref = rootRef.child('tenant-redeems').child(tenantId);
-            if (!redeemObj.date) {
-                redeemObj.date = new Date();
-            }
-            redeemObj.date = redeemObj.date.toString();
-            redeemObj.user = auth.$getAuth().uid;
-            firebaseUtils.addData(ref, redeemObj).then(function (key) {
-                var mergeObj = {};
-                mergeObj['tenant-customer-redeems/' + tenantId + '/' + redeemObj.customerSelected + '/redeems/' + key] = redeemObj;
-                if (redeemObj.offers) {
-                    mergeObj['tenant-customer-redeems/' + tenantId + '/' + redeemObj.customerSelected + '/offers/' + key] = redeemObj.offers;
-                }
-                firebaseUtils.updateData(rootRef, mergeObj).then(function (data) {
-                    if (!redeemObj.offers) {
-                        return;
-                    }
-                    var ref = rootRef.child('tenant-redeem-offers').child(tenantId).orderByChild('deactivated').equalTo(null);
-                    firebaseUtils.fetchList(ref).then(function (offers) {
-                        var mergeObj = {};
-                        for (var i = 0; i < redeemObj.offers.length; i++) {
-                            if (config.getIndexByArray(offers, '$id', redeemObj.offers[i]) > -1) {
-                                mergeObj['tenant-redeem-offers/' + tenantId + '/' + redeemObj.offers[i] + '/customers/' + redeemObj.customerSelected] = true;
-                            }
-                        }
-                        return firebaseUtils.updateData(rootRef, mergeObj);
-                    });
-                });
-            });
-        }
-
-        /**
-         * Fetch redeem list
-         * @returns {Object} Redeem data
-         */
-        function fetchRedeemList() {
-            var ref = rootRef.child('tenant-record.offers').child(tenantId).orderByChild('deactivated').equalTo(null);
-            return firebaseUtils.fetchList(ref);
-        }
-
-        /**
-         * Fetch redeem list
-         * @returns {Object} Redeem data
-         */
-        function updateRedeem(key, redeemData) {
-            var ref = rootRef.child('tenant-redeems').child(tenantId).child(key['$id']);
-            firebaseUtils.updateData(ref, redeemData).then(function (key) {
-                var mergeObj = {};
-                mergeObj['tenant-customer-redeems/' + tenantId + '/' + key.customerSelected + '/redeems/' + key['$id']] = redeemData;
-                firebaseUtils.updateData(rootRef, mergeObj);
-            });;
-        }
-
-        /**
-         * Delete Redeem
-         * @returns {Object} redeem data
-         */
-        function deleteRedeem(key) {
-            var mergeObj = {};
-            mergeObj['tenant-redeems/' + tenantId + '/' + key['$id'] + '/deactivated'] = false;
-            mergeObj['tenant-customer-redeems/' + tenantId + '/' + key.customerSelected + '/redeems/' + key['$id'] + '/deactivated'] = false;
-            //mergeObj['tenant-bulkbuy-redeems-deactivated/'+ tenantId + '/' + key['$id']] = key;
-            mergeObj['tenant-customer-redeems/' + tenantId + '/' + key.customerSelected + '/offers/' + key['$id'] + '/deactivated'] = false;
-            firebaseUtils.updateData(rootRef, mergeObj).then(function (redeems) {
-                var mergeObj = {};
-                if (key.offers) {
-                    var ref = rootRef.child('tenant-record-offers').child(tenantId).orderByChild('deactivated').equalTo(null);
-                    firebaseUtils.fetchList(ref).then(function (offers) {
-                        var mergeObj = {};
-                        for (var i = 0; i < key.offers.length; i++) {
-                            if (config.getIndexByArray(offers, '$id', key.offers[i]) > -1) {
-                                mergeObj['tenant-redeem-offers/' + tenantId + '/' + key.offers[i] + '/customers/' + key.customerSelected] = false;
-                            }
-                        }
-                        return firebaseUtils.updateData(rootRef, mergeObj);
-                    });
-                }
-            });
-        }
-
-    }
-}());
-(function () {
-    'use strict';
-
-    OfferService.$inject = ["$firebaseArray", "$firebaseObject", "$q", "authService", "auth", "msUtils", "firebaseUtils", "dxUtils", "config"];
-    angular
-        .module('app.records.offers')
-        .factory('OfferService', OfferService);
-
-    /** @ngInject */
-    function OfferService($firebaseArray, $firebaseObject, $q, authService, auth, msUtils, firebaseUtils, dxUtils, config) {
-        var tenantId = authService.getCurrentTenant();
-        // Private variables
-
-        var service = {
-            formOptions: formOptions,
-            saveOffer: saveOffer,
-            updateOffer: updateOffer,
-            deleteOffer: deleteOffer,
-            fetchOfferList: fetchOfferList
-        };
-
-        var quantityList = [{
-            id: 0,
-            quantity: 6
-        }, {
-            id: 1,
-            quantity: 10
-        }, {
-            id: 2,
-            quantity: 20
-        }];
-
-        return service;
-
-        //////////
-
-        /**
-         * Return form Item Configuration
-         * @returns {Object} Item configuration
-         */
-        function formOptions() {
-            var formOptionsItems = {
-                minColWidth: 233,
-                colCount: "auto",
-                labelLocation: "top",
-                validationGroup: "offerData",
-                items: [{
-                    dataField: 'name',
-                    caption: 'Name',
-                    validationRules: [{
-                        type: 'required',
-                        message: 'Name is required'
-                    }],
-                }, {
-                    dataField: 'phone',
-                    caption: 'Phone',
-                    validationRules: [{
-                        type: 'required',
-                        message: 'Phone number is required'
-                    }],
-                    editorType: 'dxNumberBox'
-                }, {
-                    dataField: 'email',
-                    caption: 'Email',
-                    validationRules: [{
-                        type: 'email',
-                        message: 'Please enter valid e-mail address'
-                    }]
-                }, {
-                    dataField: 'source',
-                    caption: 'Source'
-                }, {
-                    dataField: 'date',
-                    caption: 'Date',
-                    editorType: 'dxDateBox',
-                    validationRules: [{
-                        type: 'required',
-                        message: 'Field is required'
-                    }],
-                    editorOptions: {
-                        width: '100%',
-                        onInitialized: function (e) {
-                            e.component.option('value', new Date());
-                        }
-                    }
-
-                }]
-            };
-            return formOptionsItems;
-        }
-
-
-        /**
-         * Save form data
-         * @returns {Object} Offer Form data
-         */
-        function saveOffer(offerObj) {
-            var ref = rootRef.child('tenant-record-offers').child(tenantId);
-            offerObj.user = auth.$getAuth().uid;
-            if (!offerObj.date) {
-                offerObj.date = new Date();
-            }
-
-            if(offerObj.expiryDate) {
-                offerObj.expiryDate = offerObj.expiryDate.toString();
-            }
-            offerObj.date = offerObj.date.toString();
-            return firebaseUtils.addData(ref, offerObj);
-        }
-
-        /**
-         * Fetch offer list
-         * @returns {Object} Offer data
-         */
-        function fetchOfferList() {
-            var ref = rootRef.child('tenant-record-offers').child(tenantId).orderByChild('deactivated').equalTo(null);
-            return firebaseUtils.fetchList(ref);
-        }
-
-        /**
-         * Fetch offer list
-         * @returns {Object} Offer data
-         */
-        function updateOffer(key, offerData) {
-            var ref = rootRef.child('tenant-record-offers').child(tenantId).child(key['$id']);
-            return firebaseUtils.updateData(ref, offerData);
-        }
-
-        /**
-         * Delete Offer
-         * @returns {Object} offer data
-         */
-        function deleteOffer(key) {
-            var ref = rootRef.child('tenant-record-offers').child(tenantId).child(key['$id']);
-            return firebaseUtils.updateData(ref, { deactivated: false });
-        }
-
-    }
-}());
-(function ()
-{
-    'use strict';
-
-    config.$inject = ["$stateProvider", "$translatePartialLoaderProvider", "msApiProvider", "msNavigationServiceProvider"];
-    angular
-        .module('app.bulkbuys',
-            [   
-                'app.bulkbuys.customers',
-                'app.bulkbuys.bookings',
-                // 3rd Party Dependencies
-                'dx'
-            ]
-        )
-        .config(config);
-
-    /** @ngInject */
-    function config($stateProvider, $translatePartialLoaderProvider, msApiProvider, msNavigationServiceProvider)
-    {
-        // State
-        $stateProvider
-            .state('app.bulkbuys', {
-                abstract: true,
-                url     : '/bulkbuys'
-            })
-            .state('app.bulkbuys.list', {
-                url      : '/list',
-                views    : {
-                    'content@app': {
-                        templateUrl: 'app/main/apps/bulkbuys/views/list-view/bulkbuys.html',
-                        controller : 'BulkbuysController as vm'
-                    }
-                },
-                 resolve : {
-                    currentAuth: ["auth", function (auth) {
-                        // returns a promisse so the resolve waits for it to complete
-                        return auth.$requireSignIn();
-                    }],
-                    tenantInfo: ["auth", "authService", function(auth, authService){
-                        return authService.retrieveTenant();
-                    }],
-                    settings: ["adminService", function(adminService) {
-                        return adminService.getCurrentSettings();
-                    }],
-                    customers: ["adminService", function(adminService) {
-                        return adminService.getCurrentBulkCustomers();
-                    }],
-                    beers: ["adminService", function(adminService) {
-                        return adminService.getBeers();
-                    }]
-                },
-                bodyClass: 'bulkbuys'
-            });
-
-        // Translation
-        $translatePartialLoaderProvider.addPart('app/main/apps/bulkbuys');
-
-        // Navigation
-        // msNavigationServiceProvider.saveItem('apps', {
-        //     title : 'Applications',
-        //     group : true,
-        //     weight: 1
-        // });
-
-        // Navigation
-        msNavigationServiceProvider.saveItem('apps.bulkbuys', {
-            title : 'Bulk Buy',
-            group : true,
-            weight: 2
-        });
-
-        msNavigationServiceProvider.saveItem('apps.bulkbuys.customers', {
-            title: 'Registrations',
-            state: 'app.bulkbuys.customers.list',
-            weight: 0
-            
-        });
-
-        msNavigationServiceProvider.saveItem('apps.bulkbuys.activation', {
-            title: 'Assign Quantity',
-            state: 'app.bulkbuys.list',
-            weight: 1
-        });
-
-        msNavigationServiceProvider.saveItem('apps.bulkbuys.bookings', {
-            title: 'Redemption',
-            state: 'app.bulkbuys.bookings.list',
-            weight: 2
-        });
-
-    }
-})();
-(function () {
-    'use strict';
-
-    BulkbuysController.$inject = ["$state", "$scope", "$mdDialog", "$q", "$document", "authService", "firebaseUtils", "config", "msUtils", "dxUtils", "bulkbuyService", "customers", "beers", "BulkbuyCustomerService"];
-    angular
-        .module('app.bulkbuys')
-        .controller('BulkbuysController', BulkbuysController);
-
-    /** @ngInject */
-    function BulkbuysController($state, $scope, $mdDialog, $q, $document, authService, firebaseUtils, config, msUtils, dxUtils, bulkbuyService, customers, beers, BulkbuyCustomerService) {
-        var vm = this,
-            tenantId = authService.getCurrentTenant(),
-            customerFormInstance,
-            formInstance,
-            dataGridInstance,
-            quantityList = [{
-                id: 0,
-                quantity: 6
-            }, {
-                id: 1,
-                quantity: 10
-            }, {
-                id: 2,
-                quantity: 20
-            }];
-
-        // Data
-        $scope.customers = customers;
-        // Methods
-        init();
-        //////////
-
-        function init() {
-            vm.bulkbuyGridOptions = gridOptions('vm.bulkbuys', $scope.customers, beers);
-        }
-
-        $scope.popupOptions = {
-            contentTemplate: "info",
-            showTitle: true,
-            width: '70%',
-            height: 'auto',
-            title: "Add Quantity",
-            dragEnabled: false,
-            closeOnOutsideClick: true,
-            bindingOptions: {
-                visible: "visiblePopup"
-            },
-            onHidden: function () {
-                resetValues();
-            }
-        };
-
-        function resetValues() {
-            formInstance.resetValues();
-            formInstance.getEditor('date').option('value', new Date());
-            formInstance.getEditor('invoice').focus();
-        }
-        
-        $scope.buttonOptions = {
-            text: "Save and Exit",
-            type: "success",
-            useSubmitBehavior: true,
-            validationGroup: "customerData",
-            onClick: function (e) {
-                submitForm(e).then(function() {
-                    $scope.visiblePopup = false;   
-                });
-            } 
-        };
-
-        $scope.saveNewBttonOptions = {
-            text: "Save and New",
-            type: "info",
-            useSubmitBehavior: true,
-            validationGroup: "customerData",
-            onClick: function (e) {
-                submitForm(e);
-            }
-        };
-
-        function submitForm(e) {
-            var defer = $q.defer();
-            var result = e.validationGroup.validate();
-            if (result.isValid == true) {
-                var formData = formInstance.option('formData');
-                var ref = rootRef.child('tenant-bulkbuy-customers').child(tenantId).orderByChild('deactivated').equalTo(null);
-                firebaseUtils.fetchList(ref).then(function (data) {
-                    var phoneIndex = msUtils.getIndexByArray(data, 'phone', formData.phone),
-                        emailIndex = msUtils.getIndexByArray(data, 'email', formData.email);
-
-                    if (phoneIndex > -1 || emailIndex > -1) {
-                        var bookingData = angular.copy(formData);
-                        bookingData.bookingName = bookingData.customerSelected;
-                        if(phoneIndex > -1) {
-                            bookingData.customerSelected = data[phoneIndex].$id;
-                        } else if(phoneIndex < 0 && emailIndex > -1) {
-                            bookingData.customerSelected = data[emailIndex].$id;
-                        }
-                        bulkbuyService.saveBulkbuy(bookingData).then(function () {
-                            init();
-                            dataGridInstance.refresh();
-                            resetValues();
-                            defer.resolve();
-                        });
-                    } else {
-                        var customerObj = {
-                            name: formData.customerSelected,
-                            phone: formData.phone,
-                            date: formData.date
-                        };
-
-                        if (formData.email) {
-                            customerObj.email = formData.email;
-                        }
-
-                        BulkbuyCustomerService.saveCustomer(customerObj).then(function (key) {
-                            var bookingData = angular.copy(formData);
-                            bookingData.bookingName = bookingData.customerSelected;
-                            bookingData.customerSelected = key;
-                            BulkbuyCustomerService.fetchCustomerList().then(function (data) {
-                                $scope.customers = data;
-                                if (formInstance) {
-                                    formInstance.repaint();
-                                }
-
-                            });
-
-                            bulkbuyService.saveBulkbuy(bookingData).then(function () {
-                                init();
-                                dataGridInstance.refresh();
-                                resetValues();
-                                defer.resolve();
-                            });
-                        });
-                    }
-                });
-            }
-            return defer.promise;
-        }
-
-        /**
-         * Bulk buy form
-         * @param {*} customerList 
-         * @param {*} beerList 
-         */
-        vm.bulkgridForm = {
-            colCount: 2,
-            onInitialized: function (e) {
-                formInstance = e.component;
-            },
-            validationGroup: "customerData",
-            items: [{
-                dataField: 'date',
-                label: {
-                    text: 'Date'
-                },
-                editorType: 'dxDateBox',
-                editorOptions: {
-                    width: '100%',
-                    onInitialized: function (e) {
-                        e.component.option('value', new Date());
-                    }
-                },
-                validationRules: [{
-                    type: 'required',
-                    message: 'Date is required'
-                }]
-            }, {
-                dataField: 'invoice',
-                caption: 'Invoice',
-                dataType: 'string',
-                validationRules: [{
-                    type: 'required',
-                    message: 'Invoice number is required'
-                }]
-            }, {
-                dataField: 'customerSelected',
-                label: {
-                    text: 'Customer'
-                },
-                name: 'customerSelected',
-                editorType: 'dxAutocomplete',
-                editorOptions: {
-                    dataSource: $scope.customers,
-                    displayExpr: "name",
-                    valueExpr: "$id",
-                    searchExpr: ["name"],
-                    onSelectionChanged: function (data) {
-                        if (data.selectedItem && data.selectedItem.$id) {
-                            formInstance.getEditor('phone').option('value', data.selectedItem.phone);
-                            formInstance.getEditor('email').option('value', data.selectedItem.email);
-                        }
-                    }
-                },
-                validationRules: [{
-                    type: 'required',
-                    message: 'Please select a customer'
-                }]
-            }, {
-                dataField: "phone",
-                label: {
-                    text: "Phone"
-                },
-                name: 'phone',
-                validationRules: [{
-                    type: 'required',
-                    message: 'Phone number is required!'
-                }],
-                editorType: 'dxNumberBox'
-            }, {
-                dataField: "email",
-                label: {
-                    text: "Email"
-                },
-                name: 'email',
-                editorType: 'dxTextBox',
-                validationRules: [{
-                    type: 'email',
-                    message: 'Please enter valid e-mail address'
-                }]
-            }, {
-                dataField: "quantity",
-                label: {
-                    text: "Units (0.5 Ltrs per unit)"
-                },
-                editorType: 'dxSelectBox',
-                editorOptions: {
-                    dataSource: quantityList,
-                    displayExpr: "quantity",
-                    valueExpr: "id"
-                },
-                validationRules: [{
-                    type: 'required',
-                    message: 'Please select a quantity'
-                }]
-            }]
-        };
-        /**
-         * Grid Options for bulkbuy list
-         * @param {Object} dataSource 
-         */
-        function gridOptions(dataSource, customers, beers) {
-            $scope.gridCols = config.bulkbuyGridCols(tenantId, customers, beers);
-            var gridOptions = dxUtils.createGrid(),
-                otherConfig = {
-                    dataSource: {
-                        load: function () {
-                            var defer = $q.defer();
-                            bulkbuyService.fetchBulkbuyList().then(function (data) {
-                                defer.resolve(data);
-                            });
-                            return defer.promise;
-                        },
-                        insert: function (bulkbuyObj) {
-                            //var data = formInstance.option('formData');
-                            bulkbuyService.saveBulkbuy(bulkbuyObj);
-                        },
-                        update: function (key, bulkbuyObj) {
-                            bulkbuyService.updateBulkbuy(key, bulkbuyObj);
-                        },
-                        remove: function (key) {
-                            bulkbuyService.deleteBulkbuy(key);
-                        }
-                    },
-                    summary: {
-                        totalItems: [{
-                            column: 'balancedQuantity',
-                            summaryType: 'sum',
-                            texts: {
-                                sum: 'Total Balanced'
-                            }
-                        }]
-                    },
-                    editing: {
-                        allowAdding: false,
-                        allowUpdating: false,
-                        allowDeleting: true,
-                        mode: 'form'
-                    },
-                    bindingOptions: {
-                        columns: 'gridCols'
-                    },
-                    export: {
-                        enabled: true,
-                        fileName: 'Bulkbuys',
-                        allowExportSelectedData: true
-                    },
-                    onRowRemoving: function (e) {
-                        var d = $.Deferred();
-
-                        if (quantityList[e.data.quantity].quantity > e.data.balancedQuantity) {
-                            d.reject("Can not delete the record");
-                        } else {
-                            d.resolve();
-                        }
-                        e.cancel = d.promise();
-                    },
-                    onRowInserted: function (e) {
-                        init();
-                        dataGridInstance.repaint();
-                        dataGridInstance.refresh();
-                    }, onToolbarPreparing: function (e) {
-                        e.toolbarOptions.items.unshift({
-                            location: "before",
-                            widget: "dxButton",
-                            options: {
-                                text: "Add Quantity",
-                                type: "success",
-                                onClick: function (e) {
-                                    $scope.visiblePopup = true;
-                                }
-                            }
-                        });
-                    },
-                    onContentReady: function (e) {
-                        dataGridInstance = e.component;
-                    }
-                };
-
-            angular.extend(gridOptions, otherConfig);
-            return gridOptions;
-        };
-
-    }
-})();
-(function () {
-    'use strict';
-
-    customerService.$inject = ["$firebaseArray", "$firebaseObject", "$q", "authService", "auth", "msUtils", "firebaseUtils", "dxUtils", "config"];
-    angular
-        .module('app.bulkbuys.customers')
-        .factory('BulkbuyCustomerService', customerService);
-
-    /** @ngInject */
-    function customerService($firebaseArray, $firebaseObject, $q, authService, auth, msUtils, firebaseUtils, dxUtils, config) {
-        var tenantId = authService.getCurrentTenant();
-        // Private variables
-
-        var service = {
-            formOptions: formOptions,
-            saveCustomer: saveCustomer,
-            updateCustomer: updateCustomer,
-            deleteCustomer: deleteCustomer,
-            fetchCustomerList: fetchCustomerList
-        };
-
-        var quantityList = [{
-            id: 0,
-            quantity: 6
-        }, {
-            id: 1,
-            quantity: 10
-        }, {
-            id: 2,
-            quantity: 20
-        }];
-
-        return service;
-
-        //////////
-
-        /**
-         * Return form Item Configuration
-         * @returns {Object} Item configuration
-         */
-        function formOptions() {
-            var formOptionsItems = {
-                minColWidth: 233,
-                colCount: "auto",
-                labelLocation: "top",
-                validationGroup: "customerData",
-                items: [{
-                    dataField: 'name',
-                    caption: 'Name',
-                    validationRules: [{
-                        type: 'required',
-                        message: 'Name is required'
-                    }],
-                }, {
-                    dataField: 'phone',
-                    caption: 'Phone',
-                    validationRules: [{
-                        type: 'required',
-                        message: 'Phone number is required'
-                    }],
-                    editorType: 'dxNumberBox'
-                }, {
-                    dataField: 'email',
-                    caption: 'Email',
-                    validationRules: [{
-                        type: 'email',
-                        message: 'Please enter valid e-mail address'
-                    }]
-                }, {
-                    dataField: 'source',
-                    caption: 'Source'
-                }, {
-                    dataField: 'date',
-                    caption: 'Date',
-                    editorType: 'dxDateBox',
-                    validationRules: [{
-                        type: 'required',
-                        message: 'Field is required'
-                    }],
-                    editorOptions: {
-                        width: '100%',
-                        onInitialized: function (e) {
-                            e.component.option('value', new Date());
-                        }
-                    }
-
-                }]
-            };
-            return formOptionsItems;
-        }
-
-
-        /**
-         * Save form data
-         * @returns {Object} Customer Form data
-         */
-        function saveCustomer(customerObj) {
-            var ref = rootRef.child('tenant-bulkbuy-customers').child(tenantId);
-            customerObj.user = auth.$getAuth().uid;
-            if (!customerObj.date) {
-                customerObj.date = new Date();
-            }
-            customerObj.date = customerObj.date.toString();
-            return firebaseUtils.addData(ref, customerObj);
-        }
-
-        /**
-         * Fetch customer list
-         * @returns {Object} Customer data
-         */
-        function fetchCustomerList() {
-            var ref = rootRef.child('tenant-bulkbuy-customers').child(tenantId).orderByChild('deactivated').equalTo(null);
-            return firebaseUtils.fetchList(ref);
-        }
-
-        /**
-         * Fetch customer list
-         * @returns {Object} Customer data
-         */
-        function updateCustomer(key, customerData) {
-            var ref = rootRef.child('tenant-bulkbuy-customers').child(tenantId).child(key['$id']);
-            return firebaseUtils.updateData(ref, customerData);
-        }
-
-        /**
-         * Delete Customer
-         * @returns {Object} customer data
-         */
-        function deleteCustomer(key) {
-            var ref = rootRef.child('tenant-bulkbuy-customers').child(tenantId).child(key['$id']);
-            return firebaseUtils.updateData(ref, { deactivated: false });
-        }
-
-    }
-}());
-(function () {
-    'use strict';
-
-    bookingService.$inject = ["$firebaseArray", "$firebaseObject", "$q", "authService", "auth", "firebaseUtils", "dxUtils", "config"];
-    angular
-        .module('app.bulkbuys.bookings')
-        .factory('BulkBuysBookingService', bookingService);
-
-    /** @ngInject */
-    function bookingService($firebaseArray, $firebaseObject, $q, authService, auth, firebaseUtils, dxUtils, config) {
-        var tenantId = authService.getCurrentTenant(),
-            formInstance,
-            customerList,
-            statusList,
-            chargesList,
-            formData,
-            tenantBulkBuyTable = 'tenant-bulkbuy-bookings';
-        // Private variables
-
-        var service = {
-            gridOptions: gridOptions,
-            saveBooking: saveBooking,
-            updateBooking: updateBooking,
-            fetchBookingList: fetchBookingList,
-            bookingForm: bookingForm
-        };
-
-        var quantityList = [{
-            id: 0,
-            quantity: 6
-        }, {
-            id: 1,
-            quantity: 10
-        }, {
-            id: 2,
-            quantity: 20
-        }];
-
-        return service;
-
-        //////////
-
-        function bookingForm(customerList, beerList) {
-            var bookingForm = {
-                colCount: 2,
-                dataSource: {
-                    load: function () {
-                        var defer = $q.defer();
-                        fetchBookingList().then(function (data) {
-                            defer.resolve(data);
-                        });
-                        return defer.promise;
-                    },
-                    insert: function (bookingObj) {
-                        var data = formInstance.option('formData');
-                        saveBooking(bookingObj);
-                    },
-                    update: function (key, bookingObj) {
-                        updateBooking(key, bookingObj);
-                    },
-                    remove: function (key) {
-                        deleteBooking(key);
-                    }
-                },
-                onInitialized: function (e) {
-                    formInstance = e.component;
-                },
-                items: [{
-                    dataField: 'date',
-                    name: 'redeemdate',
-                    label: {
-                        text: 'Date'
-                    },
-                    editorType: 'dxDateBox',
-                    width: '100%',
-                    editorOptions: {
-                        onInitialized: function (e) {
-                            e.component.option('value', new Date());
-                        }
-                    },
-                    validationRules: [{
-                        type: 'required',
-                        message: 'Date is required'
-                    }]
-                }, {
-                    dataField: 'customerSelected',
-                    label: {
-                        text: 'Customer'
-                    },
-                    name: 'customer',
-                    editorType: 'dxSelectBox',
-                    editorOptions: {
-                        dataSource: customerList,
-                        displayExpr: "name",
-                        valueExpr: "$id",
-                        searchExpr: ["name", "phone", "email"],
-                        itemTemplate: function (itemData, itemIndex, itemElement) {
-                            var rightBlock = $("<div style='display:inline-block;'>");
-                            rightBlock.append("<p style='font-size:larger;'><b>" + itemData.name + "</b></p>");
-                            rightBlock.append("<p>Phone: <span>" + itemData.phone + "</span></p>");
-                            rightBlock.append("<p>Email Id: <span>" + itemData.email ? itemData.email : '' + "</span></p>");
-                            itemElement.append(rightBlock);
-                        },
-                        onValueChanged: function (e) {
-                            if (e.value) {
-                                var ref = rootRef.child('tenant-customer-bulkbuy-records').child(tenantId).child(e.value).child('balancedQuantity');
-                                firebaseUtils.getItemByRef(ref).then(function (data) {
-                                    formInstance.getEditor('quantity').option('max', data.$value);
-                                    formInstance.getEditor('balancedUnits').option('value', data.$value);
-                                });
-                            } else {
-                                formInstance.itemOption('balancedUnits', 'visible', false);
-                            }
-                        }
-                    },
-                    validationRules: [{
-                        type: 'required',
-                        message: 'Please select a customer'
-                    }]
-                }, {
-                    dataField: "quantity",
-                    name: 'redeemQuantity',
-                    label: {
-                        text: 'Units (0.5 Ltrs per unit)'
-                    },
-                    width: 125,
-                    editorType: 'dxNumberBox',
-                    validationRules: [{
-                        type: 'required',
-                        message: 'Please select a quantity'
-                    }, { 
-                        type: 'pattern', 
-                        pattern: '^[1-9][0-9]*$', 
-                        message: 'Value must be more then 0' 
-                    }
-]
-                }, {
-                    label: {
-                        text: 'Balance Units'
-                    },
-                    dataField: 'balancedUnits',
-                    name: 'units',
-                    visible: true,
-                    editorType: 'dxTextBox',
-                    editorOptions: {
-                        disabled: true,
-                        fieldEditDisabled: true
-                    }
-                }]
-            };
-            return bookingForm;
-        }
-        /**
-         * Grid Options for booking list
-         * @param {Object} dataSource 
-         */
-        function gridOptions(dataSource, customers, beers) {
-            var gridOptions = dxUtils.createGrid(),
-                otherConfig = {
-                    dataSource: {
-                        load: function () {
-                            var defer = $q.defer();
-                            fetchBookingList().then(function (data) {
-                                defer.resolve(data);
-                            });
-                            return defer.promise;
-                        },
-                        insert: function (bookingObj) {
-                            var data = formInstance.option('formData');
-                            saveBooking(data);
-                        },
-                        update: function (key, bookingObj) {
-                            updateBooking(key, bookingObj);
-                        },
-                        remove: function (key) {
-                            deleteBooking(key);
-                        }
-                    },
-                    summary: {
-                        totalItems: [{
-                            column: 'quantity',
-                            summaryType: 'sum',
-                            texts: {
-                                sum: 'Total'
-                            }
-                        }]
-                    },
-                    editing: {
-                        allowAdding: true,
-                        allowUpdating: false,
-                        allowDeleting: true,
-                        mode: 'form',
-                        form: bookingForm(customers, beers)
-                    },
-                    columns: config.bulkBookingGridCols(tenantId, customers, beers),
-                    export: {
-                        enabled: true,
-                        fileName: 'Bookings',
-                        allowExportSelectedData: true
-                    }
-
-                };
-
-            angular.extend(gridOptions, otherConfig);
-            return gridOptions;
-        };
-
-        /**
-         * Save form data
-         * @returns {Object} Booking Form data
-         */
-        function saveBooking(bookingObj) {
-            var ref = rootRef.child(tenantBulkBuyTable).child(tenantId);
-            if (!bookingObj.date) {
-                bookingObj.date = new Date();
-            }
-            bookingObj.date = bookingObj.date.toString();
-            bookingObj.balancedUnits = bookingObj.balancedUnits - bookingObj.quantity;
-            firebaseUtils.addData(ref, bookingObj).then(function (key) {
-                ;
-                var mergeObj = {};
-                mergeObj['tenant-bulkbuy-bookings-records/' + tenantId + '/' + bookingObj.customerSelected + '/records/' + key] = bookingObj;
-                mergeObj['tenant-customer-bulkbuy-records/' + tenantId + '/' + bookingObj.customerSelected + '/balancedQuantity'] = bookingObj.balancedUnits;
-                firebaseUtils.updateData(rootRef, mergeObj).then(function () {
-                    updateBalanceQuantity(bookingObj);
-                });
-            });
-        }
-
-        function updateBalanceQuantity(bookingObj) {
-            var ref = rootRef.child('tenant-customer-bulkbuy-records').child(tenantId).child(bookingObj.customerSelected).child('records').orderByChild('deactivated').equalTo(null);
-            firebaseUtils.fetchList(ref).then(function (data) {
-                var sortedArray = data.sort(function (a, b) { return new Date(a.date) - new Date(b.date) });
-                var allowedSum = bookingObj.quantity;
-                var mergeObj = {};
-                sortedArray.forEach(function (elem, index) {
-                    if (elem.balancedQuantity !== 0 && allowedSum !== 0) {
-                        if (elem.balancedQuantity > allowedSum) {
-                            elem.balancedQuantity = elem.balancedQuantity - allowedSum;
-                            allowedSum = 0;
-                        } else if (elem.balancedQuantity === allowedSum) {
-                            elem.balancedQuantity = 0;
-                            allowedSum = 0;
-                        } else if (elem.balancedQuantity < allowedSum) {
-                            allowedSum = allowedSum - elem.balancedQuantity;
-                            elem.balancedQuantity = 0;
-                        }
-                        mergeObj['tenant-customer-bulkbuy-records/' + tenantId + '/' + bookingObj.customerSelected + '/records/' + elem['$id'] + '/balancedQuantity/'] = elem.balancedQuantity;
-                        mergeObj['tenant-bulkbuys/' + tenantId + '/' + elem['$id'] + '/balancedQuantity/'] = elem.balancedQuantity;
-                    }
-                });
-
-                firebaseUtils.updateData(rootRef, mergeObj);
-            });
-        }
-
-
-        function getIndexByArray(data, key, value) {
-            for (var i = 0; i < data.length; i++) {
-                if (data[i][key] == value) {
-                    return i;
-                }
-            }
-            return -1;
-        }
-
-        /**
-         * Fetch booking list
-         * @returns {Object} Booking data
-         */
-        function fetchBookingList() {
-            var ref = rootRef.child(tenantBulkBuyTable).child(tenantId).orderByChild('deactivated').equalTo(null);
-            return firebaseUtils.fetchList(ref);
-        }
-
-        /**
-         * Fetch booking list
-         * @returns {Object} Booking data
-         */
-        function updateBooking(key, bookingData) {
-            var ref = rootRef.child().child(tenantId).child(key['$id']);
-            firebaseUtils.updateData(ref, bookingData);
-            updateKegQuantity();
-        }
-
-        /**
-         * Delete Booking
-         * @returns {Object} booking data
-         */
-        function deleteBooking(key) {
-            var mergeObj = {};
-            mergeObj[tenantBulkBuyTable + '/' + tenantId + '/' + key['$id'] + '/deactivated'] = false;
-            mergeObj['tenant-bulkbuy-bookings-records/' + tenantId + '/' + key.customerSelected + '/records/' + key['$id'] + '/deactivated'] = false;
-            //mergeObj['tenant-bulkbuy-records-deactivated/'+ tenantId + '/' + key['$id']] = key;
-
-            firebaseUtils.updateData(rootRef, mergeObj).then(function () {
-                var ref = rootRef.child('tenant-customer-bulkbuy-records').child(tenantId).child(key.customerSelected).child('records').orderByChild('deactivated').equalTo(null);
-                firebaseUtils.fetchList(ref).then(function (data) {
-                    var sortedArray = data.sort(function (a, b) { return new Date(a.date) - new Date(b.date) });
-                    var allowedSum = key.quantity;
-                    var mergeObj = {};
-                    sortedArray.forEach(function (elem, index) {
-                        if (allowedSum !== 0) {
-                            if (elem.balancedQuantity < quantityList[elem.quantity].quantity) {
-                                var diff = quantityList[elem.quantity].quantity - elem.balancedQuantity;
-                                if(allowedSum > diff) {
-                                    elem.balancedQuantity = elem.balancedQuantity + diff;
-                                    allowedSum = allowedSum - diff;
-                                } else if(allowedSum === diff) {
-                                    elem.balancedQuantity = elem.balancedQuantity + allowedSum;
-                                    allowedSum = 0;
-                                } else if(allowedSum < diff) {
-                                    elem.balancedQuantity = elem.balancedQuantity + allowedSum;
-                                    allowedSum = 0;
-                                }
-
-                                mergeObj['tenant-customer-bulkbuy-records/' + tenantId + '/' + key.customerSelected + '/records/' + elem['$id'] + '/balancedQuantity/'] = elem.balancedQuantity;
-                                mergeObj['tenant-bulkbuys/' + tenantId + '/' + elem['$id'] + '/balancedQuantity/'] = elem.balancedQuantity;
-
-                            }
-                        }
-                    });
-
-                    firebaseUtils.updateData(rootRef, mergeObj).then(function () {
-
-                        var ref = rootRef.child('tenant-customer-bulkbuy-records').child(tenantId).child(key.customerSelected).child('records').orderByChild('deactivated').equalTo(null);
-                        firebaseUtils.getListSum(ref, 'balancedQuantity').then(function (data) {
-                            var mergeObj = {};
-                            mergeObj['tenant-customer-bulkbuy-records/' + tenantId + '/' + key.customerSelected + '/balancedQuantity'] = data;
-                            firebaseUtils.updateData(rootRef, mergeObj);
-                        });
-                    });
-                });
-
-            });
-        }
-    }
-}());
-(function ()
-{
-    'use strict';
-
-    config.$inject = ["$stateProvider", "$translatePartialLoaderProvider", "msApiProvider", "msNavigationServiceProvider"];
-    angular
-        .module('app.bookings',
-            [
-                // 3rd Party Dependencies
-                'dx'
-            ]
-        )
-        .config(config);
-
-    /** @ngInject */
-    function config($stateProvider, $translatePartialLoaderProvider, msApiProvider, msNavigationServiceProvider)
-    {
-        // State
-        $stateProvider
-            .state('app.bookings', {
-                abstract: true,
-                url     : '/bookings'
-            })
-            .state('app.bookings.list', {
-                url      : '/list',
-                views    : {
-                    'content@app': {
-                        templateUrl: 'app/main/apps/bookings/views/list-view/bookings.html',
-                        controller : 'BookingsController as vm'
-                    }
-                },
-                 resolve : {
-                    currentAuth: ["auth", function (auth) {
-                        // returns a promisse so the resolve waits for it to complete
-                        return auth.$requireSignIn();
-                    }],
-                    tenantInfo: ["auth", "authService", function(auth, authService){
-                        return authService.retrieveTenant();
-                    }],
-                    settings: ["adminService", function(adminService) {
-                        return adminService.getCurrentSettings();
-                    }],
-                    customers: ["adminService", function(adminService) {
-                        return adminService.getCurrentCustomers();
-                    }],
-                    beers: ["adminService", function(adminService) {
-                        return adminService.getBeers();
-                    }]
-                },
-                bodyClass: 'bookings'
-            });
-
-        // Translation
-        $translatePartialLoaderProvider.addPart('app/main/apps/bookings');
-
-        
-        msNavigationServiceProvider.saveItem('apps.bookings', {
-            title: 'Bookings',
-            state: 'app.bookings.list'
-        });
-    }
-})();
-(function ()
-{
-    'use strict';
-
-    BookingsController.$inject = ["$state", "$scope", "$mdDialog", "$document", "bookingService", "customers", "beers"];
-    angular
-        .module('app.bookings')
-        .controller('BookingsController', BookingsController);
-
-    /** @ngInject */
-    function BookingsController($state, $scope, $mdDialog, $document, bookingService, customers, beers)
-    {
-        var vm = this;
-
-        // Data
-        
-        // Methods
-        init();
-        //////////
-
-        function init() {
-            vm.bookingGridOptions = bookingService.gridOptions('vm.bookings', customers, beers);
         }
 
     }
@@ -3371,6 +1525,1871 @@
 
     }
 })();
+(function ()
+{
+    'use strict';
+
+    config.$inject = ["$stateProvider", "$translatePartialLoaderProvider", "msApiProvider", "msNavigationServiceProvider"];
+    angular
+        .module('app.vendings',
+            [
+                // 3rd Party Dependencies
+                'dx'
+            ]
+        )
+        .config(config);
+
+    /** @ngInject */
+    function config($stateProvider, $translatePartialLoaderProvider, msApiProvider, msNavigationServiceProvider)
+    {
+        // State
+        $stateProvider
+            .state('app.vendings', {
+                abstract: true,
+                url     : '/vendings'
+            })
+            .state('app.vendings.list', {
+                url      : '/list',
+                views    : {
+                    'content@app': {
+                        templateUrl: 'app/main/apps/vendings/views/list-view/vendings.html',
+                        controller : 'VendingsController as vm'
+                    }
+                },
+                 resolve : {
+                    currentAuth: ["auth", function (auth) {
+                        // returns a promisse so the resolve waits for it to complete
+                        return auth.$requireSignIn();
+                    }],
+                    tenantInfo: ["auth", "authService", function(auth, authService){
+                        return authService.retrieveTenant();
+                    }],
+                    settings: ["adminService", function(adminService) {
+                        return adminService.getCurrentSettings();
+                    }],
+                    customers: ["adminService", function(adminService) {
+                        return adminService.getCurrentCustomers();
+                    }],
+                    beers: ["adminService", function(adminService) {
+                        return adminService.getBeers();
+                    }]
+                },
+                bodyClass: 'vendings'
+            });
+
+        // Translation
+        $translatePartialLoaderProvider.addPart('app/main/apps/vendings');
+
+        // // Navigation
+        // msNavigationServiceProvider.saveItem('apps', {
+        //     title : 'Applications',
+        //     group : true,
+        //     weight: 1
+        // });
+
+        msNavigationServiceProvider.saveItem('vendings', {
+            title: 'Vendings',
+            state: 'app.vendings.list'
+        });
+    }
+})();
+(function () {
+    'use strict';
+
+    VendingsController.$inject = ["$state", "$scope", "$q", "$mdDialog", "$document", "firebaseUtils", "authService", "vendingService", "config", "customers", "beers", "dxUtils"];
+    angular
+        .module('app.vendings')
+        .controller('VendingsController', VendingsController);
+
+    /** @ngInject */
+    function VendingsController($state, $scope, $q, $mdDialog, $document, firebaseUtils, authService, vendingService, config, customers, beers, dxUtils) {
+        var vm = this,
+            brewGridInstance,
+            vendorGridInstance,
+            tenantId = authService.getCurrentTenant();
+
+        // Data
+
+        // Methods
+        init();
+        //////////
+
+        function init() {
+            //vm.vendingGridOptions = vendingService.gridOptions('vm.vendings', customers, beers);
+            //vm.brewDataGridOptions = vendingService.brewGrid(beers);
+            vm.brewDataSource = [];
+        }
+
+        $scope.$on('VendorFormInitialized', function (event, data) {
+        });
+
+        /**
+         * Sub Grid
+         */
+        vm.brewDataGridOptions = dxUtils.createGrid();
+        var otherConfig = {
+            dataSource: {
+                load: function (options) {
+                    var defer = $q.defer();
+                    vendingService.fetchInvoiceVendingList(vm.currentRowKey).then(function (data) {
+                        defer.resolve(data);
+                    });
+                    return defer.promise;
+                },
+                insert: function (vendingObj) {
+                    vendingObj.invoice = vm.currentRowKey;
+                    vendingService.saveInvoiceVending(vendingObj);
+                },
+                update: function (key, vendingObj) {
+                    vendingObj.invoice = vm.currentRowKey;
+                    vendingService.updateInvoiceVending(key, vendingObj);
+                },
+                remove: function (key) {
+                    vendingService.deleteInvoiceVending(key, vm.currentRowKey);
+                }
+            },
+            columns: [{
+                dataField: 'beerSelected',
+                label: {
+                    text: 'Brew'
+                },
+                lookup: {
+                    dataSource: beers,
+                    displayExpr: "name",
+                    valueExpr: "$id"
+                },
+                validationRules: [{
+                    type: 'required',
+                    message: 'Please select a brew'
+                }]
+            }, {
+                dataField: 'quantity',
+                caption: 'Units (Per unit 0.5 Ltr)',
+                dataType: 'number',
+                validationRules: [{
+                    type: 'required',
+                    message: 'Please select a quantity'
+                }]
+            }],
+            searchPanel: {
+                visible: false
+            },
+            columnChooser: {
+                enabled: false
+            },
+            editing: {
+                allowAdding: true,
+                allowUpdating: true,
+                allowDeleting: true,
+                mode: 'batch'
+            },
+            onContentReady: function (e) {
+                brewGridInstance = e.component;
+            },
+            showBorders: true
+        };
+        angular.extend(vm.brewDataGridOptions, otherConfig);
+
+
+        /**
+         * Main Grid
+         */
+        vm.vendingGridOptions = {
+            dataSource: {
+                load: function (options) {
+                    var defer = $q.defer();
+                    vendingService.fetchVendingList().then(function (data) {
+                        defer.resolve(data);
+                    });
+                    return defer.promise;
+                },
+                insert: function (vendingObj) {
+                    vendingService.saveVending(vendingObj);
+                },
+                update: function (key, vendingObj) {
+                    vendingService.updateVending(key, vendingObj);
+                },
+                remove: function (key) {
+                    vendingService.deleteVending(key);
+                }
+            },
+            summary: {
+                totalItems: [{
+                    column: 'name',
+                    summaryType: 'count'
+                }]
+            },
+            editing: {
+                allowAdding: true,
+                allowUpdating: true,
+                allowDeleting: true,
+                mode: 'form',
+                form: vendingService.vendingForm(customers, beers)
+            },
+            columns: config.vendingGridCols(tenantId, customers, beers),
+            export: {
+                enabled: true,
+                fileName: 'Vendings',
+                allowExportSelectedData: true
+            },
+            onEditorPrepared: function (e) {
+                if (e.row && e.row.data && e.row.data.$id) {
+                    vm.brewDataSource = e.row.data.brews;
+                    vm.editMode = true;
+                } else {
+                    vm.brewDataSource = [];
+                    vm.editMode = false;
+                }
+            }, loadPanel: {
+                enabled: true
+            },
+            onRowExpanded: function(e) {
+                if(e.key) {
+                    vm.currentRowKey = e.key.$id;
+                }
+            },
+            scrolling: {
+                mode: 'virtual'
+            },
+            headerFilter: {
+                visible: false
+            },
+            searchPanel: {
+                visible: true,
+                width: 240,
+                placeholder: 'Search...'
+            },
+            columnChooser: {
+                enabled: true
+            },
+            onContentReady: function (e) {
+                vendorGridInstance = e.component;
+                e.component.option('loadPanel.enabled', false);
+            },
+            showColumnLines: false,
+            showRowLines: true,
+            showBorders: false,
+            rowAlternationEnabled: true,
+            columnAutoWidth: true,
+            sorting: {
+                mode: 'none'
+            },
+            masterDetail: {
+                enabled: true,
+                template: "brewTemplate"
+            }
+        };
+
+        vm.brewDataSource = new DevExpress.data.CustomStore();
+    }
+})();
+(function ()
+{
+    'use strict';
+
+    config.$inject = ["$stateProvider", "$translatePartialLoaderProvider", "msApiProvider", "msNavigationServiceProvider"];
+    angular
+        .module('app.shipments',
+            [
+                // 3rd Party Dependencies
+                'dx'
+            ]
+        )
+        .config(config);
+
+    /** @ngInject */
+    function config($stateProvider, $translatePartialLoaderProvider, msApiProvider, msNavigationServiceProvider)
+    {
+        // State
+        $stateProvider
+            .state('app.shipments', {
+                abstract: true,
+                url     : '/shipments'
+            })
+            .state('app.shipments.list', {
+                url      : '/list',
+                views    : {
+                    'content@app': {
+                        templateUrl: 'app/main/apps/shipments/views/list-view/shipments.html',
+                        controller : 'ShipmentsController as vm'
+                    }
+                },
+                 resolve : {
+                    currentAuth: ["auth", function (auth) {
+                        // returns a promisse so the resolve waits for it to complete
+                        return auth.$requireSignIn();
+                    }],
+                    tenantInfo: ["auth", "authService", function(auth, authService){
+                        return authService.retrieveTenant();
+                    }],
+                    settings: ["adminService", function(adminService) {
+                        return adminService.getCurrentSettings();
+                    }]
+                },
+                bodyClass: 'shipments'
+            });
+
+        // Translation
+        $translatePartialLoaderProvider.addPart('app/main/apps/shipments');
+
+      
+        msNavigationServiceProvider.saveItem('shipments', {
+            title: 'Shipments',
+            state: 'app.shipments.list'
+        });
+    }
+})();
+(function ()
+{
+    'use strict';
+
+    ShipmentsController.$inject = ["$state", "$scope", "$mdDialog", "$document", "shipmentService"];
+    angular
+        .module('app.shipments')
+        .controller('ShipmentsController', ShipmentsController);
+
+    /** @ngInject */
+    function ShipmentsController($state, $scope, $mdDialog, $document, shipmentService)
+    {
+        var vm = this;
+
+        // Data
+        
+        // Methods
+        init();
+        //////////
+
+        function init() {
+            vm.shipmentGridOptions = shipmentService.gridOptions('vm.shipments');
+        }
+
+    }
+})();
+(function ()
+{
+    'use strict';
+
+    config.$inject = ["$stateProvider", "$translatePartialLoaderProvider", "msApiProvider", "msNavigationServiceProvider"];
+    angular
+        .module('app.records',
+            [   
+                'app.records.offers',
+                'app.records.redeems',
+                // 3rd Party Dependencies
+                'dx'
+            ]
+        )
+        .config(config);
+
+    /** @ngInject */
+    function config($stateProvider, $translatePartialLoaderProvider, msApiProvider, msNavigationServiceProvider)
+    {
+        // State
+        $stateProvider
+            .state('app.records', {
+                abstract: true,
+                url     : '/records'
+            })
+            .state('app.records.list', {
+                url      : '/list',
+                views    : {
+                    'content@app': {
+                        templateUrl: 'app/main/apps/records/views/list-view/records.html',
+                        controller : 'RecordsController as vm'
+                    }
+                },
+                 resolve : {
+                    currentAuth: ["auth", function (auth) {
+                        // returns a promisse so the resolve waits for it to complete
+                        return auth.$requireSignIn();
+                    }],
+                    tenantInfo: ["auth", "authService", function(auth, authService){
+                        return authService.retrieveTenant();
+                    }],
+                    settings: ["adminService", function(adminService) {
+                        return adminService.getCurrentSettings();
+                    }],
+                    customers: ["adminService", function(adminService) {
+                        return adminService.getCurrentCustomers();
+                    }],
+                    beers: ["adminService", function(adminService) {
+                        return adminService.getBeers();
+                    }]
+                },
+                bodyClass: 'records'
+            });
+
+        // Translation
+        $translatePartialLoaderProvider.addPart('app/main/apps/records');
+
+        // // Navigation
+        // msNavigationServiceProvider.saveItem('apps', {
+        //     title : 'Applications',
+        //     group : true,
+        //     weight: 1
+        // });
+
+        // Navigation
+        msNavigationServiceProvider.saveItem('hopheads', {
+            title : 'HopHeads',
+            group : true,
+            weight: 2
+        });
+
+        msNavigationServiceProvider.saveItem('hopheads.records', {
+            weight: 2,
+            title: 'Sales',
+            state: 'app.records.list',
+            icon: 'icon-sale'
+        });
+    }
+})();
+(function ()
+{
+    'use strict';
+
+    RecordsController.$inject = ["$state", "$scope", "$mdDialog", "$document", "recordService", "customers", "beers"];
+    angular
+        .module('app.records')
+        .controller('RecordsController', RecordsController);
+
+    /** @ngInject */
+    function RecordsController($state, $scope, $mdDialog, $document, recordService, customers, beers)
+    {
+        var vm = this;
+
+        // Data
+        
+        // Methods
+        init();
+        //////////
+
+        function init() {
+            vm.recordGridOptions = recordService.gridOptions('vm.records', customers, beers);
+        }
+
+    }
+})();
+(function () {
+    'use strict';
+
+    redeemService.$inject = ["$firebaseArray", "$firebaseObject", "$q", "authService", "auth", "firebaseUtils", "dxUtils", "config"];
+    angular
+        .module('app.records.redeems')
+        .factory('redeemService', redeemService);
+
+    /** @ngInject */
+    function redeemService($firebaseArray, $firebaseObject, $q, authService, auth, firebaseUtils, dxUtils, config) {
+        var tenantId = authService.getCurrentTenant(),
+            formInstance;
+        // Private variables
+
+        var service = {
+            gridOptions: gridOptions,
+            saveRedeem: saveRedeem,
+            updateRedeem: updateRedeem,
+            fetchRedeemList: fetchRedeemList,
+            redeemForm: redeemForm
+        };
+
+        return service;
+
+        //////////
+
+        function redeemForm(customerList, beerList) {
+            var redeemForm = {
+                onInitialized: function (e) {
+                    formInstance = e.component;
+                },
+                items: [{
+                    itemType: "group",
+                    caption: "Information",
+                    colSpan: 2,
+                    colCount: 2,
+                    items: [
+                        {
+                            dataField: 'date',
+                            label: {
+                                text: 'Date'
+                            },
+                            editorType: 'dxDateBox',
+                            editorOptions: {
+                                width: '100%',
+                                onInitialized: function (e) {
+                                    e.component.option('value', new Date());
+                                }
+                            },
+                            validationRules: [{
+                                type: 'required',
+                                message: 'Date is required'
+                            }]
+                        }, {
+                            dataField: 'invoice',
+                            label: {
+                                text: 'Invoice'
+                            },
+                            validationRules: [{
+                                type: 'required',
+                                message: 'Invoice number is required'
+                            }]
+                        }, {
+                            dataField: 'customerSelected',
+                            label: {
+                                text: 'Customer'
+                            },
+                            editorType: 'dxSelectBox',
+                            editorOptions: {
+                                dataSource: customerList,
+                                displayExpr: "name",
+                                valueExpr: "$id",
+                                searchExpr: ["name", "phone", "HHID"],
+                                itemTemplate: function (itemData, itemIndex, itemElement) {
+                                    var rightBlock = $("<div style='display:inline-block;'>");
+                                    rightBlock.append("<p style='font-size:larger;'><b>" + itemData.name + "</b></p>");
+                                    rightBlock.append("<p>Phone: <span>" + itemData.phone + "</span></p>");
+                                    rightBlock.append("<p>HopHead ID: <span>" + itemData.HHID + "</span></p>");
+                                    itemElement.append(rightBlock);
+                                }, onSelectionChanged: function (customer) {
+                                    if (customer.selectedItem && customer.selectedItem.$id) {
+                                        formInstance.getEditor('offers').option('items', '');
+                                        var ref = rootRef.child('tenant-redeem-offers').child(tenantId).orderByChild('deactivated').equalTo(null);
+                                        firebaseUtils.fetchList(ref).then(function (data) {
+                                            var selectedList = [];
+                                            for (var item = 0; item < data.length; item++) {
+                                                if (data[item].customers && (!data[item].customers.hasOwnProperty(customer.selectedItem.$id) || data[item].customers[customer.selectedItem.$id] === false)) {
+                                                    selectedList.push(data[item]);
+                                                } else if (!data[item].customers) {
+                                                    selectedList.push(data[item]);
+                                                }
+                                            }
+                                            formInstance.getEditor('offers').option('items', selectedList);
+                                        });
+                                    }
+                                }
+                            },
+                            validationRules: [{
+                                type: 'required',
+                                message: 'Please select a customer'
+                            }]
+                        }, 'amountOnBeer', 'amountOnLiquor', 'amountOnFood'
+                    ]
+                },
+                {
+                    itemType: "group",
+                    caption: "Redeem Offers",
+                    colSpan: 2,
+                    colCount: 2,
+                    items: [{
+                        dataField: 'offers',
+                        label: {
+                            text: 'Select Offers'
+                        },
+                        name: 'offers',
+                        editorOptions: {
+                            displayExpr: "description",
+                            valueExpr: "$id",
+                            noDataText: 'No offers available',
+                            showSelectionControls: true,
+                            applyValueMode: "useButtons"
+                        },
+                        editorType: 'dxTagBox'
+                    }]
+                }]
+            };
+            return redeemForm;
+        }
+        /**
+         * Grid Options for redeem list
+         * @param {Object} dataSource 
+         */
+        function gridOptions(dataSource, customers, beers, offers) {
+            var gridOptions = dxUtils.createGrid(),
+                otherConfig = {
+                    dataSource: {
+                        load: function () {
+                            var defer = $q.defer();
+                            fetchRedeemList().then(function (data) {
+                                defer.resolve(data);
+                            });
+                            return defer.promise;
+                        },
+                        insert: function (redeemObj) {
+                            var data = formInstance.option('formData');
+                            if (data.offers) {
+                                redeemObj.offers = data.offers;
+                            }
+                            saveRedeem(redeemObj);
+                        },
+                        update: function (key, redeemObj) {
+                            var data = formInstance.option('formData');
+                            if (data.offers) {
+                                redeemObj.offers = data.offers;
+                            }
+                            updateRedeem(key, redeemObj);
+                        },
+                        remove: function (key) {
+                            deleteRedeem(key);
+                        }
+                    },
+                    summary: {
+                        totalItems: [{
+                            column: 'amountOnLiquor',
+                            summaryType: 'sum'
+                        }, {
+                            column: 'amountOnBeer',
+                            summaryType: 'sum'
+                        }, {
+                            column: 'amountOnFood',
+                            summaryType: 'sum'
+                        }, {
+                            column: 'total',
+                            summaryType: 'sum',
+                            customizeText: function (data) {
+                                return 'Total ' + data.value;
+                            }
+                        }]
+                    },
+                    editing: {
+                        allowAdding: false,
+                        allowUpdating: false,
+                        allowDeleting: false,
+                        mode: 'form',
+                        form: redeemForm(customers, beers)
+                    },
+                    columns: config.redeemGridCols(tenantId, customers, beers, offers),
+                    export: {
+                        enabled: true,
+                        fileName: 'Redeems',
+                        allowExportSelectedData: true
+                    }
+
+                };
+
+            angular.extend(gridOptions, otherConfig);
+            return gridOptions;
+        };
+
+        /**
+         * Save form data
+         * @returns {Object} Redeem Form data
+         */
+        function saveRedeem(redeemObj) {
+            var ref = rootRef.child('tenant-redeems').child(tenantId);
+            if (!redeemObj.date) {
+                redeemObj.date = new Date();
+            }
+            redeemObj.date = redeemObj.date.toString();
+            redeemObj.user = auth.$getAuth().uid;
+            firebaseUtils.addData(ref, redeemObj).then(function (key) {
+                var mergeObj = {};
+                mergeObj['tenant-customer-redeems/' + tenantId + '/' + redeemObj.customerSelected + '/redeems/' + key] = redeemObj;
+                if (redeemObj.offers) {
+                    mergeObj['tenant-customer-redeems/' + tenantId + '/' + redeemObj.customerSelected + '/offers/' + key] = redeemObj.offers;
+                }
+                firebaseUtils.updateData(rootRef, mergeObj).then(function (data) {
+                    if (!redeemObj.offers) {
+                        return;
+                    }
+                    var ref = rootRef.child('tenant-redeem-offers').child(tenantId).orderByChild('deactivated').equalTo(null);
+                    firebaseUtils.fetchList(ref).then(function (offers) {
+                        var mergeObj = {};
+                        for (var i = 0; i < redeemObj.offers.length; i++) {
+                            if (config.getIndexByArray(offers, '$id', redeemObj.offers[i]) > -1) {
+                                mergeObj['tenant-redeem-offers/' + tenantId + '/' + redeemObj.offers[i] + '/customers/' + redeemObj.customerSelected] = true;
+                            }
+                        }
+                        return firebaseUtils.updateData(rootRef, mergeObj);
+                    });
+                });
+            });
+        }
+
+        /**
+         * Fetch redeem list
+         * @returns {Object} Redeem data
+         */
+        function fetchRedeemList() {
+            var ref = rootRef.child('tenant-redeems').child(tenantId).orderByChild('deactivated').equalTo(null);
+            return firebaseUtils.fetchList(ref);
+        }
+
+        /**
+         * Fetch redeem list
+         * @returns {Object} Redeem data
+         */
+        function updateRedeem(key, redeemData) {
+            var ref = rootRef.child('tenant-redeems').child(tenantId).child(key['$id']);
+            firebaseUtils.updateData(ref, redeemData).then(function (key) {
+                var mergeObj = {};
+                mergeObj['tenant-customer-redeems/' + tenantId + '/' + key.customerSelected + '/redeems/' + key['$id']] = redeemData;
+                firebaseUtils.updateData(rootRef, mergeObj);
+            });;
+        }
+
+        /**
+         * Delete Redeem
+         * @returns {Object} redeem data
+         */
+        function deleteRedeem(key) {
+            var mergeObj = {};
+            mergeObj['tenant-redeems/' + tenantId + '/' + key['$id'] + '/deactivated'] = false;
+            mergeObj['tenant-customer-redeems/' + tenantId + '/' + key.customerSelected + '/redeems/' + key['$id'] + '/deactivated'] = false;
+            //mergeObj['tenant-bulkbuy-redeems-deactivated/'+ tenantId + '/' + key['$id']] = key;
+            mergeObj['tenant-customer-redeems/' + tenantId + '/' + key.customerSelected + '/offers/' + key['$id'] + '/deactivated'] = false;
+            firebaseUtils.updateData(rootRef, mergeObj).then(function (redeems) {
+                var mergeObj = {};
+                if (key.offers) {
+                    var ref = rootRef.child('tenant-record-offers').child(tenantId).orderByChild('deactivated').equalTo(null);
+                    firebaseUtils.fetchList(ref).then(function (offers) {
+                        var mergeObj = {};
+                        for (var i = 0; i < key.offers.length; i++) {
+                            if (config.getIndexByArray(offers, '$id', key.offers[i]) > -1) {
+                                mergeObj['tenant-redeem-offers/' + tenantId + '/' + key.offers[i] + '/customers/' + key.customerSelected] = false;
+                            }
+                        }
+                        return firebaseUtils.updateData(rootRef, mergeObj);
+                    });
+                }
+            });
+        }
+
+    }
+}());
+(function () {
+    'use strict';
+
+    OfferService.$inject = ["$firebaseArray", "$firebaseObject", "$q", "authService", "auth", "msUtils", "firebaseUtils", "dxUtils", "config"];
+    angular
+        .module('app.records.offers')
+        .factory('OfferService', OfferService);
+
+    /** @ngInject */
+    function OfferService($firebaseArray, $firebaseObject, $q, authService, auth, msUtils, firebaseUtils, dxUtils, config) {
+        var tenantId = authService.getCurrentTenant();
+        // Private variables
+
+        var service = {
+            formOptions: formOptions,
+            saveOffer: saveOffer,
+            updateOffer: updateOffer,
+            deleteOffer: deleteOffer,
+            fetchOfferList: fetchOfferList
+        };
+
+        var quantityList = [{
+            id: 0,
+            quantity: 6
+        }, {
+            id: 1,
+            quantity: 10
+        }, {
+            id: 2,
+            quantity: 20
+        }];
+
+        return service;
+
+        //////////
+
+        /**
+         * Return form Item Configuration
+         * @returns {Object} Item configuration
+         */
+        function formOptions() {
+            var formOptionsItems = {
+                minColWidth: 233,
+                colCount: "auto",
+                labelLocation: "top",
+                validationGroup: "offerData",
+                items: [{
+                    dataField: 'name',
+                    caption: 'Name',
+                    validationRules: [{
+                        type: 'required',
+                        message: 'Name is required'
+                    }],
+                }, {
+                    dataField: 'phone',
+                    caption: 'Phone',
+                    validationRules: [{
+                        type: 'required',
+                        message: 'Phone number is required'
+                    }],
+                    editorType: 'dxNumberBox'
+                }, {
+                    dataField: 'email',
+                    caption: 'Email',
+                    validationRules: [{
+                        type: 'email',
+                        message: 'Please enter valid e-mail address'
+                    }]
+                }, {
+                    dataField: 'source',
+                    caption: 'Source'
+                }, {
+                    dataField: 'date',
+                    caption: 'Date',
+                    editorType: 'dxDateBox',
+                    validationRules: [{
+                        type: 'required',
+                        message: 'Field is required'
+                    }],
+                    editorOptions: {
+                        width: '100%',
+                        onInitialized: function (e) {
+                            e.component.option('value', new Date());
+                        }
+                    }
+
+                }]
+            };
+            return formOptionsItems;
+        }
+
+
+        /**
+         * Save form data
+         * @returns {Object} Offer Form data
+         */
+        function saveOffer(offerObj) {
+            var ref = rootRef.child('tenant-record-offers').child(tenantId);
+            offerObj.user = auth.$getAuth().uid;
+            if (!offerObj.date) {
+                offerObj.date = new Date();
+            }
+
+            if(offerObj.expiryDate) {
+                offerObj.expiryDate = offerObj.expiryDate.toString();
+            }
+            offerObj.date = offerObj.date.toString();
+            return firebaseUtils.addData(ref, offerObj);
+        }
+
+        /**
+         * Fetch offer list
+         * @returns {Object} Offer data
+         */
+        function fetchOfferList() {
+            var ref = rootRef.child('tenant-record-offers').child(tenantId).orderByChild('deactivated').equalTo(null);
+            return firebaseUtils.fetchList(ref);
+        }
+
+        /**
+         * Fetch offer list
+         * @returns {Object} Offer data
+         */
+        function updateOffer(key, offerData) {
+            var ref = rootRef.child('tenant-record-offers').child(tenantId).child(key['$id']);
+            return firebaseUtils.updateData(ref, offerData);
+        }
+
+        /**
+         * Delete Offer
+         * @returns {Object} offer data
+         */
+        function deleteOffer(key) {
+            var ref = rootRef.child('tenant-record-offers').child(tenantId).child(key['$id']);
+            return firebaseUtils.updateData(ref, { deactivated: false });
+        }
+
+    }
+}());
+(function ()
+{
+    'use strict';
+
+    config.$inject = ["$stateProvider", "$translatePartialLoaderProvider", "msApiProvider", "msNavigationServiceProvider"];
+    angular
+        .module('app.bulkbuys',
+            [   
+                'app.bulkbuys.customers',
+                'app.bulkbuys.bookings',
+                // 3rd Party Dependencies
+                'dx'
+            ]
+        )
+        .config(config);
+
+    /** @ngInject */
+    function config($stateProvider, $translatePartialLoaderProvider, msApiProvider, msNavigationServiceProvider)
+    {
+        // State
+        $stateProvider
+            .state('app.bulkbuys', {
+                abstract: true,
+                url     : '/bulkbuys'
+            })
+            .state('app.bulkbuys.list', {
+                url      : '/list',
+                views    : {
+                    'content@app': {
+                        templateUrl: 'app/main/apps/bulkbuys/views/list-view/bulkbuys.html',
+                        controller : 'BulkbuysController as vm'
+                    }
+                },
+                 resolve : {
+                    currentAuth: ["auth", function (auth) {
+                        // returns a promisse so the resolve waits for it to complete
+                        return auth.$requireSignIn();
+                    }],
+                    tenantInfo: ["auth", "authService", function(auth, authService){
+                        return authService.retrieveTenant();
+                    }],
+                    settings: ["adminService", function(adminService) {
+                        return adminService.getCurrentSettings();
+                    }],
+                    customers: ["adminService", function(adminService) {
+                        return adminService.getCurrentBulkCustomers();
+                    }],
+                    beers: ["adminService", function(adminService) {
+                        return adminService.getBeers();
+                    }]
+                },
+                bodyClass: 'bulkbuys'
+            });
+
+        // Translation
+        $translatePartialLoaderProvider.addPart('app/main/apps/bulkbuys');
+
+        // Navigation
+        // msNavigationServiceProvider.saveItem('apps', {
+        //     title : 'Applications',
+        //     group : true,
+        //     weight: 1
+        // });
+
+        // Navigation
+        msNavigationServiceProvider.saveItem('bulkbuys', {
+            title : 'Bulk Buy',
+            group : true,
+            weight: 2
+        });
+
+        msNavigationServiceProvider.saveItem('bulkbuys.customers', {
+            title: 'Registrations',
+            state: 'app.bulkbuys.customers.list',
+            weight: 0
+            
+        });
+
+        msNavigationServiceProvider.saveItem('bulkbuys.activation', {
+            title: 'Assign Quantity',
+            state: 'app.bulkbuys.list',
+            weight: 1,
+            icon: 'icon-plus'
+        });
+
+        msNavigationServiceProvider.saveItem('bulkbuys.bookings', {
+            title: 'Redemption',
+            state: 'app.bulkbuys.bookings.list',
+            weight: 2,
+            icon: 'icon-beer'
+        });
+
+    }
+})();
+(function () {
+    'use strict';
+
+    BulkbuysController.$inject = ["$state", "$scope", "$mdDialog", "$q", "$document", "authService", "firebaseUtils", "config", "msUtils", "dxUtils", "bulkbuyService", "customers", "beers", "BulkbuyCustomerService"];
+    angular
+        .module('app.bulkbuys')
+        .controller('BulkbuysController', BulkbuysController);
+
+    /** @ngInject */
+    function BulkbuysController($state, $scope, $mdDialog, $q, $document, authService, firebaseUtils, config, msUtils, dxUtils, bulkbuyService, customers, beers, BulkbuyCustomerService) {
+        var vm = this,
+            tenantId = authService.getCurrentTenant(),
+            customerFormInstance,
+            formInstance,
+            dataGridInstance,
+            quantityList = [{
+                id: 0,
+                quantity: 6
+            }, {
+                id: 1,
+                quantity: 10
+            }, {
+                id: 2,
+                quantity: 20
+            }];
+
+        // Data
+        $scope.customers = customers;
+        // Methods
+        init();
+        //////////
+
+        function init() {
+            vm.bulkbuyGridOptions = gridOptions('vm.bulkbuys', $scope.customers, beers);
+        }
+
+        $scope.popupOptions = {
+            contentTemplate: "info",
+            showTitle: true,
+            width: '70%',
+            height: 'auto',
+            title: "Add Quantity",
+            dragEnabled: false,
+            closeOnOutsideClick: true,
+            bindingOptions: {
+                visible: "visiblePopup"
+            },
+            onHidden: function () {
+                resetValues();
+            }
+        };
+
+        function resetValues() {
+            formInstance.resetValues();
+            formInstance.getEditor('date').option('value', new Date());
+            formInstance.getEditor('invoice').focus();
+        }
+        
+        $scope.buttonOptions = {
+            text: "Save and Exit",
+            type: "success",
+            useSubmitBehavior: true,
+            validationGroup: "customerData",
+            onClick: function (e) {
+                submitForm(e).then(function() {
+                    $scope.visiblePopup = false;   
+                });
+            } 
+        };
+
+        $scope.saveNewBttonOptions = {
+            text: "Save and New",
+            type: "info",
+            useSubmitBehavior: true,
+            validationGroup: "customerData",
+            onClick: function (e) {
+                submitForm(e);
+            }
+        };
+
+        function submitForm(e) {
+            var defer = $q.defer();
+            var result = e.validationGroup.validate();
+            if (result.isValid == true) {
+                var formData = formInstance.option('formData');
+                var ref = rootRef.child('tenant-bulkbuy-customers').child(tenantId).orderByChild('deactivated').equalTo(null);
+                firebaseUtils.fetchList(ref).then(function (data) {
+                    var phoneIndex = msUtils.getIndexByArray(data, 'phone', formData.phone),
+                        emailIndex = msUtils.getIndexByArray(data, 'email', formData.email);
+
+                    if (phoneIndex > -1 || emailIndex > -1) {
+                        var bookingData = angular.copy(formData);
+                        bookingData.bookingName = bookingData.customerSelected;
+                        if(phoneIndex > -1) {
+                            bookingData.customerSelected = data[phoneIndex].$id;
+                        } else if(phoneIndex < 0 && emailIndex > -1) {
+                            bookingData.customerSelected = data[emailIndex].$id;
+                        }
+                        bulkbuyService.saveBulkbuy(bookingData).then(function () {
+                            init();
+                            dataGridInstance.refresh();
+                            resetValues();
+                            defer.resolve();
+                        });
+                    } else {
+                        var customerObj = {
+                            name: formData.customerSelected,
+                            phone: formData.phone,
+                            date: formData.date
+                        };
+
+                        if (formData.email) {
+                            customerObj.email = formData.email;
+                        }
+
+                        BulkbuyCustomerService.saveCustomer(customerObj).then(function (key) {
+                            var bookingData = angular.copy(formData);
+                            bookingData.bookingName = bookingData.customerSelected;
+                            bookingData.customerSelected = key;
+                            BulkbuyCustomerService.fetchCustomerList().then(function (data) {
+                                $scope.customers = data;
+                                if (formInstance) {
+                                    formInstance.repaint();
+                                }
+
+                            });
+
+                            bulkbuyService.saveBulkbuy(bookingData).then(function () {
+                                init();
+                                dataGridInstance.refresh();
+                                resetValues();
+                                defer.resolve();
+                            });
+                        });
+                    }
+                });
+            }
+            return defer.promise;
+        }
+
+        /**
+         * Bulk buy form
+         * @param {*} customerList 
+         * @param {*} beerList 
+         */
+        vm.bulkgridForm = {
+            colCount: 2,
+            onInitialized: function (e) {
+                formInstance = e.component;
+            },
+            validationGroup: "customerData",
+            items: [{
+                dataField: 'date',
+                label: {
+                    text: 'Date'
+                },
+                editorType: 'dxDateBox',
+                editorOptions: {
+                    width: '100%',
+                    onInitialized: function (e) {
+                        e.component.option('value', new Date());
+                    }
+                },
+                validationRules: [{
+                    type: 'required',
+                    message: 'Date is required'
+                }]
+            }, {
+                dataField: 'invoice',
+                caption: 'Invoice',
+                dataType: 'string',
+                validationRules: [{
+                    type: 'required',
+                    message: 'Invoice number is required'
+                }]
+            }, {
+                dataField: 'customerSelected',
+                label: {
+                    text: 'Customer'
+                },
+                name: 'customerSelected',
+                editorType: 'dxAutocomplete',
+                editorOptions: {
+                    dataSource: $scope.customers,
+                    displayExpr: "name",
+                    valueExpr: "$id",
+                    searchExpr: ["name"],
+                    onSelectionChanged: function (data) {
+                        if (data.selectedItem && data.selectedItem.$id) {
+                            formInstance.getEditor('phone').option('value', data.selectedItem.phone);
+                            formInstance.getEditor('email').option('value', data.selectedItem.email);
+                        }
+                    }
+                },
+                validationRules: [{
+                    type: 'required',
+                    message: 'Please select a customer'
+                }]
+            }, {
+                dataField: "phone",
+                label: {
+                    text: "Phone"
+                },
+                name: 'phone',
+                validationRules: [{
+                    type: 'required',
+                    message: 'Phone number is required!'
+                }],
+                editorType: 'dxNumberBox'
+            }, {
+                dataField: "email",
+                label: {
+                    text: "Email"
+                },
+                name: 'email',
+                editorType: 'dxTextBox',
+                validationRules: [{
+                    type: 'email',
+                    message: 'Please enter valid e-mail address'
+                }]
+            }, {
+                dataField: "quantity",
+                label: {
+                    text: "Units (0.5 Ltrs per unit)"
+                },
+                editorType: 'dxSelectBox',
+                editorOptions: {
+                    dataSource: quantityList,
+                    displayExpr: "quantity",
+                    valueExpr: "id"
+                },
+                validationRules: [{
+                    type: 'required',
+                    message: 'Please select a quantity'
+                }]
+            }]
+        };
+        /**
+         * Grid Options for bulkbuy list
+         * @param {Object} dataSource 
+         */
+        function gridOptions(dataSource, customers, beers) {
+            $scope.gridCols = config.bulkbuyGridCols(tenantId, customers, beers);
+            var gridOptions = dxUtils.createGrid(),
+                otherConfig = {
+                    dataSource: {
+                        load: function () {
+                            var defer = $q.defer();
+                            bulkbuyService.fetchBulkbuyList().then(function (data) {
+                                defer.resolve(data);
+                            });
+                            return defer.promise;
+                        },
+                        insert: function (bulkbuyObj) {
+                            //var data = formInstance.option('formData');
+                            bulkbuyService.saveBulkbuy(bulkbuyObj);
+                        },
+                        update: function (key, bulkbuyObj) {
+                            bulkbuyService.updateBulkbuy(key, bulkbuyObj);
+                        },
+                        remove: function (key) {
+                            bulkbuyService.deleteBulkbuy(key);
+                        }
+                    },
+                    summary: {
+                        totalItems: [{
+                            column: 'balancedQuantity',
+                            summaryType: 'sum',
+                            texts: {
+                                sum: 'Total Balanced'
+                            }
+                        }]
+                    },
+                    editing: {
+                        allowAdding: false,
+                        allowUpdating: false,
+                        allowDeleting: true,
+                        mode: 'form'
+                    },
+                    bindingOptions: {
+                        columns: 'gridCols'
+                    },
+                    export: {
+                        enabled: true,
+                        fileName: 'Bulkbuys',
+                        allowExportSelectedData: true
+                    },
+                    onRowRemoving: function (e) {
+                        var d = $.Deferred();
+
+                        if (quantityList[e.data.quantity].quantity > e.data.balancedQuantity || new Date(e.data.expiryDate) < new Date()) {
+                            d.reject("Can not delete the record");
+                        } else {
+                            d.resolve();
+                        }
+                        e.cancel = d.promise();
+                    },
+                    onRowInserted: function (e) {
+                        init();
+                        dataGridInstance.repaint();
+                        dataGridInstance.refresh();
+                    }, onToolbarPreparing: function (e) {
+                        e.toolbarOptions.items.unshift({
+                            location: "before",
+                            widget: "dxButton",
+                            options: {
+                                text: "Add Quantity",
+                                type: "success",
+                                onClick: function (e) {
+                                    $scope.visiblePopup = true;
+                                }
+                            }
+                        });
+                    },
+                    onContentReady: function (e) {
+                        dataGridInstance = e.component;
+                    },
+                    onRowPrepared: function (info) {
+                        if (info.rowType == 'data' && new Date(info.data.expiryDate).getTime() < new Date().getTime())
+                            info.rowElement.addClass("md-red-50-bg");
+                    }
+                };
+
+            angular.extend(gridOptions, otherConfig);
+            return gridOptions;
+        };
+
+    }
+})();
+(function () {
+    'use strict';
+
+    customerService.$inject = ["$firebaseArray", "$firebaseObject", "$q", "authService", "auth", "msUtils", "firebaseUtils", "dxUtils", "config"];
+    angular
+        .module('app.bulkbuys.customers')
+        .factory('BulkbuyCustomerService', customerService);
+
+    /** @ngInject */
+    function customerService($firebaseArray, $firebaseObject, $q, authService, auth, msUtils, firebaseUtils, dxUtils, config) {
+        var tenantId = authService.getCurrentTenant();
+        // Private variables
+
+        var service = {
+            formOptions: formOptions,
+            saveCustomer: saveCustomer,
+            updateCustomer: updateCustomer,
+            deleteCustomer: deleteCustomer,
+            fetchCustomerList: fetchCustomerList
+        };
+
+        var quantityList = [{
+            id: 0,
+            quantity: 6
+        }, {
+            id: 1,
+            quantity: 10
+        }, {
+            id: 2,
+            quantity: 20
+        }];
+
+        return service;
+
+        //////////
+
+        /**
+         * Return form Item Configuration
+         * @returns {Object} Item configuration
+         */
+        function formOptions() {
+            var formOptionsItems = {
+                minColWidth: 233,
+                colCount: "auto",
+                labelLocation: "top",
+                validationGroup: "customerData",
+                items: [{
+                    dataField: 'name',
+                    caption: 'Name',
+                    validationRules: [{
+                        type: 'required',
+                        message: 'Name is required'
+                    }],
+                }, {
+                    dataField: 'phone',
+                    caption: 'Phone',
+                    validationRules: [{
+                        type: 'required',
+                        message: 'Phone number is required'
+                    }],
+                    editorType: 'dxNumberBox'
+                }, {
+                    dataField: 'email',
+                    caption: 'Email',
+                    validationRules: [{
+                        type: 'email',
+                        message: 'Please enter valid e-mail address'
+                    }]
+                }, {
+                    dataField: 'source',
+                    caption: 'Source'
+                }, {
+                    dataField: 'date',
+                    caption: 'Date',
+                    editorType: 'dxDateBox',
+                    validationRules: [{
+                        type: 'required',
+                        message: 'Field is required'
+                    }],
+                    editorOptions: {
+                        width: '100%',
+                        onInitialized: function (e) {
+                            e.component.option('value', new Date());
+                        }
+                    }
+
+                }]
+            };
+            return formOptionsItems;
+        }
+
+
+        /**
+         * Save form data
+         * @returns {Object} Customer Form data
+         */
+        function saveCustomer(customerObj) {
+            var ref = rootRef.child('tenant-bulkbuy-customers').child(tenantId);
+            customerObj.user = auth.$getAuth().uid;
+            if (!customerObj.date) {
+                customerObj.date = new Date();
+            }
+            customerObj.date = customerObj.date.toString();
+            return firebaseUtils.addData(ref, customerObj);
+        }
+
+        /**
+         * Fetch customer list
+         * @returns {Object} Customer data
+         */
+        function fetchCustomerList() {
+            var ref = rootRef.child('tenant-bulkbuy-customers').child(tenantId).orderByChild('deactivated').equalTo(null);
+            return firebaseUtils.fetchList(ref);
+        }
+
+        /**
+         * Fetch customer list
+         * @returns {Object} Customer data
+         */
+        function updateCustomer(key, customerData) {
+            var ref = rootRef.child('tenant-bulkbuy-customers').child(tenantId).child(key['$id']);
+            return firebaseUtils.updateData(ref, customerData);
+        }
+
+        /**
+         * Delete Customer
+         * @returns {Object} customer data
+         */
+        function deleteCustomer(key) {
+            var ref = rootRef.child('tenant-bulkbuy-customers').child(tenantId).child(key['$id']);
+            return firebaseUtils.updateData(ref, { deactivated: false });
+        }
+
+    }
+}());
+(function () {
+    'use strict';
+
+    bookingService.$inject = ["$firebaseArray", "$firebaseObject", "$q", "authService", "auth", "firebaseUtils", "dxUtils", "config"];
+    angular
+        .module('app.bulkbuys.bookings')
+        .factory('BulkBuysBookingService', bookingService);
+
+    /** @ngInject */
+    function bookingService($firebaseArray, $firebaseObject, $q, authService, auth, firebaseUtils, dxUtils, config) {
+        var tenantId = authService.getCurrentTenant(),
+            formInstance,
+            customerList,
+            statusList,
+            chargesList,
+            formData,
+            tenantBulkBuyTable = 'tenant-bulkbuy-bookings';
+        // Private variables
+
+        var service = {
+            gridOptions: gridOptions,
+            saveBooking: saveBooking,
+            updateBooking: updateBooking,
+            fetchBookingList: fetchBookingList,
+            bookingForm: bookingForm
+        };
+
+        var quantityList = [{
+            id: 0,
+            quantity: 6
+        }, {
+            id: 1,
+            quantity: 10
+        }, {
+            id: 2,
+            quantity: 20
+        }];
+
+        return service;
+
+        //////////
+
+        function bookingForm(customerList, beerList) {
+            var bookingForm = {
+                colCount: 2,
+                dataSource: {
+                    load: function () {
+                        var defer = $q.defer();
+                        fetchBookingList().then(function (data) {
+                            defer.resolve(data);
+                        });
+                        return defer.promise;
+                    },
+                    insert: function (bookingObj) {
+                        var data = formInstance.option('formData');
+                        saveBooking(bookingObj);
+                    },
+                    update: function (key, bookingObj) {
+                        updateBooking(key, bookingObj);
+                    },
+                    remove: function (key) {
+                        deleteBooking(key);
+                    }
+                },
+                onInitialized: function (e) {
+                    formInstance = e.component;
+                },
+                items: [{
+                    dataField: 'date',
+                    name: 'redeemdate',
+                    label: {
+                        text: 'Date'
+                    },
+                    editorType: 'dxDateBox',
+                    width: '100%',
+                    editorOptions: {
+                        onInitialized: function (e) {
+                            e.component.option('value', new Date());
+                        }
+                    },
+                    validationRules: [{
+                        type: 'required',
+                        message: 'Date is required'
+                    }]
+                }, {
+                    dataField: 'customerSelected',
+                    label: {
+                        text: 'Customer'
+                    },
+                    name: 'customer',
+                    editorType: 'dxSelectBox',
+                    editorOptions: {
+                        dataSource: customerList,
+                        displayExpr: "name",
+                        valueExpr: "$id",
+                        searchExpr: ["name", "phone", "email"],
+                        itemTemplate: function (itemData, itemIndex, itemElement) {
+                            var rightBlock = $("<div style='display:inline-block;'>");
+                            rightBlock.append("<p style='font-size:larger;'><b>" + itemData.name + "</b></p>");
+                            rightBlock.append("<p>Phone: <span>" + itemData.phone + "</span></p>");
+                            rightBlock.append("<p>Email Id: <span>" + itemData.email ? itemData.email : '' + "</span></p>");
+                            itemElement.append(rightBlock);
+                        },
+                        onValueChanged: function (e) {
+                            if (e.value) {
+                                var ref = rootRef.child('tenant-customer-bulkbuy-records').child(tenantId).child(e.value).child('records').orderByChild('deactivated').equalTo(null);
+                                firebaseUtils.fetchList(ref).then(function (data) {
+                                    var sum = 0;
+                                    data.forEach(function (record) {
+                                        if (new Date(record.expiryDate).getTime() > new Date().getTime()) {
+                                            sum += record['balancedQuantity'];
+                                        }
+                                    });
+                                    formInstance.getEditor('quantity').option('max', sum);
+                                    formInstance.getEditor('balancedUnits').option('value', sum);
+                                });
+                            } else {
+                                formInstance.itemOption('balancedUnits', 'visible', false);
+                            }
+                        }
+                    },
+                    validationRules: [{
+                        type: 'required',
+                        message: 'Please select a customer'
+                    }]
+                }, {
+                    dataField: "quantity",
+                    name: 'redeemQuantity',
+                    label: {
+                        text: 'Units (0.5 Ltrs per unit)'
+                    },
+                    width: 125,
+                    editorType: 'dxNumberBox',
+                    validationRules: [{
+                        type: 'required',
+                        message: 'Please select a quantity'
+                    }, {
+                        type: 'pattern',
+                        pattern: '^[1-9][0-9]*$',
+                        message: 'Value must be more then 0'
+                    }
+                    ]
+                }, {
+                    label: {
+                        text: 'Balance Units'
+                    },
+                    dataField: 'balancedUnits',
+                    name: 'units',
+                    visible: true,
+                    editorType: 'dxTextBox',
+                    editorOptions: {
+                        disabled: true,
+                        fieldEditDisabled: true
+                    }
+                }]
+            };
+            return bookingForm;
+        }
+        /**
+         * Grid Options for booking list
+         * @param {Object} dataSource 
+         */
+        function gridOptions(dataSource, customers, beers) {
+            var gridOptions = dxUtils.createGrid(),
+                otherConfig = {
+                    dataSource: {
+                        load: function () {
+                            var defer = $q.defer();
+                            fetchBookingList().then(function (data) {
+                                defer.resolve(data);
+                            });
+                            return defer.promise;
+                        },
+                        insert: function (bookingObj) {
+                            var data = formInstance.option('formData');
+                            saveBooking(data);
+                        },
+                        update: function (key, bookingObj) {
+                            updateBooking(key, bookingObj);
+                        },
+                        remove: function (key) {
+                            deleteBooking(key);
+                        }
+                    },
+                    summary: {
+                        totalItems: [{
+                            column: 'quantity',
+                            summaryType: 'sum',
+                            texts: {
+                                sum: 'Total'
+                            }
+                        }]
+                    },
+                    editing: {
+                        allowAdding: true,
+                        allowUpdating: false,
+                        allowDeleting: true,
+                        mode: 'form',
+                        form: bookingForm(customers, beers)
+                    },
+                    columns: config.bulkBookingGridCols(tenantId, customers, beers),
+                    export: {
+                        enabled: true,
+                        fileName: 'Bookings',
+                        allowExportSelectedData: true
+                    }
+
+                };
+
+            angular.extend(gridOptions, otherConfig);
+            return gridOptions;
+        };
+
+        /**
+         * Save form data
+         * @returns {Object} Booking Form data
+         */
+        function saveBooking(bookingObj) {
+            var ref = rootRef.child(tenantBulkBuyTable).child(tenantId);
+            if (!bookingObj.date) {
+                bookingObj.date = new Date();
+            }
+            bookingObj.date = bookingObj.date.toString();
+            bookingObj.balancedUnits = bookingObj.balancedUnits - bookingObj.quantity;
+            firebaseUtils.addData(ref, bookingObj).then(function (key) {
+                var mergeObj = {};
+                mergeObj['tenant-bulkbuy-bookings-records/' + tenantId + '/' + bookingObj.customerSelected + '/records/' + key] = bookingObj;
+                mergeObj['tenant-customer-bulkbuy-records/' + tenantId + '/' + bookingObj.customerSelected + '/balancedQuantity'] = bookingObj.balancedUnits;
+                firebaseUtils.updateData(rootRef, mergeObj).then(function () {
+                    updateBalanceQuantity(bookingObj);
+                });
+            });
+        }
+
+        function updateBalanceQuantity(bookingObj) {
+            var ref = rootRef.child('tenant-customer-bulkbuy-records').child(tenantId).child(bookingObj.customerSelected).child('records').orderByChild('deactivated').equalTo(null);
+            firebaseUtils.fetchList(ref).then(function (data) {
+                var sortedArray = data.sort(function (a, b) { return new Date(a.date) - new Date(b.date) }),
+                    filteredArray = [];
+
+                sortedArray.forEach(function (value) {
+                    if(new Date(value.expiryDate).getTime() > new Date().getTime()) {
+                        filteredArray.push(value);
+                    }
+                });
+                var allowedSum = bookingObj.quantity;
+                var mergeObj = {};
+                filteredArray.forEach(function (elem, index) {
+                    if (elem.balancedQuantity !== 0 && allowedSum !== 0) {
+                        if (elem.balancedQuantity > allowedSum) {
+                            elem.balancedQuantity = elem.balancedQuantity - allowedSum;
+                            allowedSum = 0;
+                        } else if (elem.balancedQuantity === allowedSum) {
+                            elem.balancedQuantity = 0;
+                            allowedSum = 0;
+                        } else if (elem.balancedQuantity < allowedSum) {
+                            allowedSum = allowedSum - elem.balancedQuantity;
+                            elem.balancedQuantity = 0;
+                        }
+                        mergeObj['tenant-customer-bulkbuy-records/' + tenantId + '/' + bookingObj.customerSelected + '/records/' + elem['$id'] + '/balancedQuantity/'] = elem.balancedQuantity;
+                        mergeObj['tenant-bulkbuys/' + tenantId + '/' + elem['$id'] + '/balancedQuantity/'] = elem.balancedQuantity;
+                    }
+                });
+
+                firebaseUtils.updateData(rootRef, mergeObj);
+            });
+        }
+
+
+        function getIndexByArray(data, key, value) {
+            for (var i = 0; i < data.length; i++) {
+                if (data[i][key] == value) {
+                    return i;
+                }
+            }
+            return -1;
+        }
+
+        /**
+         * Fetch booking list
+         * @returns {Object} Booking data
+         */
+        function fetchBookingList() {
+            var ref = rootRef.child(tenantBulkBuyTable).child(tenantId).orderByChild('deactivated').equalTo(null);
+            return firebaseUtils.fetchList(ref);
+        }
+
+        /**
+         * Fetch booking list
+         * @returns {Object} Booking data
+         */
+        function updateBooking(key, bookingData) {
+            var ref = rootRef.child().child(tenantId).child(key['$id']);
+            firebaseUtils.updateData(ref, bookingData);
+            updateKegQuantity();
+        }
+
+        /**
+         * Delete Booking
+         * @returns {Object} booking data
+         */
+        function deleteBooking(key) {
+            var mergeObj = {};
+            mergeObj[tenantBulkBuyTable + '/' + tenantId + '/' + key['$id'] + '/deactivated'] = false;
+            mergeObj['tenant-bulkbuy-bookings-records/' + tenantId + '/' + key.customerSelected + '/records/' + key['$id'] + '/deactivated'] = false;
+            //mergeObj['tenant-bulkbuy-records-deactivated/'+ tenantId + '/' + key['$id']] = key;
+
+            firebaseUtils.updateData(rootRef, mergeObj).then(function () {
+                var ref = rootRef.child('tenant-customer-bulkbuy-records').child(tenantId).child(key.customerSelected).child('records').orderByChild('deactivated').equalTo(null);
+                firebaseUtils.fetchList(ref).then(function (data) {
+                    var sortedArray = data.sort(function (a, b) { return new Date(a.date) - new Date(b.date) });
+                    var allowedSum = key.quantity;
+                    var mergeObj = {};
+                    sortedArray.forEach(function (elem, index) {
+                        if (allowedSum !== 0) {
+                            if (elem.balancedQuantity < quantityList[elem.quantity].quantity) {
+                                var diff = quantityList[elem.quantity].quantity - elem.balancedQuantity;
+                                if (allowedSum > diff) {
+                                    elem.balancedQuantity = elem.balancedQuantity + diff;
+                                    allowedSum = allowedSum - diff;
+                                } else if (allowedSum === diff) {
+                                    elem.balancedQuantity = elem.balancedQuantity + allowedSum;
+                                    allowedSum = 0;
+                                } else if (allowedSum < diff) {
+                                    elem.balancedQuantity = elem.balancedQuantity + allowedSum;
+                                    allowedSum = 0;
+                                }
+
+                                mergeObj['tenant-customer-bulkbuy-records/' + tenantId + '/' + key.customerSelected + '/records/' + elem['$id'] + '/balancedQuantity/'] = elem.balancedQuantity;
+                                mergeObj['tenant-bulkbuys/' + tenantId + '/' + elem['$id'] + '/balancedQuantity/'] = elem.balancedQuantity;
+
+                            }
+                        }
+                    });
+
+                    firebaseUtils.updateData(rootRef, mergeObj).then(function () {
+
+                        var ref = rootRef.child('tenant-customer-bulkbuy-records').child(tenantId).child(key.customerSelected).child('records').orderByChild('deactivated').equalTo(null);
+                        firebaseUtils.getListSum(ref, 'balancedQuantity').then(function (data) {
+                            var mergeObj = {};
+                            mergeObj['tenant-customer-bulkbuy-records/' + tenantId + '/' + key.customerSelected + '/balancedQuantity'] = data;
+                            firebaseUtils.updateData(rootRef, mergeObj);
+                        });
+                    });
+                });
+
+            });
+        }
+    }
+}());
+(function ()
+{
+    'use strict';
+
+    config.$inject = ["$stateProvider", "$translatePartialLoaderProvider", "msApiProvider", "msNavigationServiceProvider"];
+    angular
+        .module('app.bookings',
+            [
+                // 3rd Party Dependencies
+                'dx'
+            ]
+        )
+        .config(config);
+
+    /** @ngInject */
+    function config($stateProvider, $translatePartialLoaderProvider, msApiProvider, msNavigationServiceProvider)
+    {
+        // State
+        $stateProvider
+            .state('app.bookings', {
+                abstract: true,
+                url     : '/bookings'
+            })
+            .state('app.bookings.list', {
+                url      : '/list',
+                views    : {
+                    'content@app': {
+                        templateUrl: 'app/main/apps/bookings/views/list-view/bookings.html',
+                        controller : 'BookingsController as vm'
+                    }
+                },
+                 resolve : {
+                    currentAuth: ["auth", function (auth) {
+                        // returns a promisse so the resolve waits for it to complete
+                        return auth.$requireSignIn();
+                    }],
+                    tenantInfo: ["auth", "authService", function(auth, authService){
+                        return authService.retrieveTenant();
+                    }],
+                    settings: ["adminService", function(adminService) {
+                        return adminService.getCurrentSettings();
+                    }],
+                    customers: ["adminService", function(adminService) {
+                        return adminService.getCurrentCustomers();
+                    }],
+                    beers: ["adminService", function(adminService) {
+                        return adminService.getBeers();
+                    }]
+                },
+                bodyClass: 'bookings'
+            });
+
+        // Translation
+        $translatePartialLoaderProvider.addPart('app/main/apps/bookings');
+
+        
+        msNavigationServiceProvider.saveItem('bookings', {
+            title: 'Bookings',
+            state: 'app.bookings.list'
+        });
+    }
+})();
+(function ()
+{
+    'use strict';
+
+    BookingsController.$inject = ["$state", "$scope", "$mdDialog", "$document", "bookingService", "customers", "beers"];
+    angular
+        .module('app.bookings')
+        .controller('BookingsController', BookingsController);
+
+    /** @ngInject */
+    function BookingsController($state, $scope, $mdDialog, $document, bookingService, customers, beers)
+    {
+        var vm = this;
+
+        // Data
+        
+        // Methods
+        init();
+        //////////
+
+        function init() {
+            vm.bookingGridOptions = bookingService.gridOptions('vm.bookings', customers, beers);
+        }
+
+    }
+})();
 (function () {
     'use strict';
 
@@ -3653,1168 +3672,6 @@
         function deleteTax(key) {
             var ref = rootRef.child('tenant-taxes').child(tenantId).child(key['$id']);
             return firebaseUtils.updateData(ref, {deactivated: false});
-        }
-
-    }
-}());
-(function () {
-    'use strict';
-
-    vendingService.$inject = ["$rootScope", "$firebaseArray", "$firebaseObject", "$q", "authService", "auth", "firebaseUtils", "dxUtils", "config"];
-    angular
-        .module('app.vendings')
-        .factory('vendingService', vendingService);
-
-    /** @ngInject */
-    function vendingService($rootScope,$firebaseArray, $firebaseObject, $q, authService, auth, firebaseUtils, dxUtils, config) {
-        var tenantId = authService.getCurrentTenant(),
-            formInstance,
-            customerList,
-            statusList,
-            chargesList,
-            formData,
-            brewGridInstance,
-            currentTxn,
-            brewDataSource = [];
-        // Private variables
-
-        var service = {
-            saveVending: saveVending,
-            updateVending: updateVending,
-            fetchVendingList: fetchVendingList,
-            vendingForm: vendingForm,
-            deleteVending: deleteVending,
-            fetchInvoiceVendingList: fetchInvoiceVendingList,
-            saveInvoiceVending: saveInvoiceVending,
-            updateInvoiceVending: updateInvoiceVending,
-            deleteInvoiceVending: deleteInvoiceVending
-        };
-
-        return service;
-
-        //////////
-
-        function vendingForm(customerList, beerList) {
-            var vendingForm = {
-                colCount: 2,
-                onInitialized: function (e) {
-                    formInstance = e.component;
-                },
-                items: [{
-                    dataField: 'date',
-                    label:{
-                        text: 'Date'
-                    }, 
-                    editorType: 'dxDateBox',
-                    editorOptions: {
-                    },
-                    validationRules: [{
-                        type: 'required',
-                        message: 'Date is required'
-                    }]
-                }, {
-                    dataField: 'invoice',
-                    label: {
-                        text: 'Invoice #'
-                    }
-                }, {
-                    dataField: 'customerSelected',
-                    label: {
-                        text: 'Customer'
-                    },
-                    editorType: 'dxSelectBox',
-                    editorOptions: {
-                        dataSource: customerList,
-                        displayExpr: "name",
-                        valueExpr: "$id",
-                        searchExpr: ["name", "phone", "HHID"],
-                        itemTemplate: function(itemData, itemIndex, itemElement) {
-                            var rightBlock = $("<div style='display:inline-block;'>");
-                            rightBlock.append("<p style='font-size:larger;'><b>" + itemData.name + "</b></p>");
-                            rightBlock.append("<p>Phone: <span>" + itemData.phone + "</span></p>");
-                            rightBlock.append("<p>HopHead ID: <span>" + itemData.HHID + "</span></p>");
-                            itemElement.append(rightBlock);
-                        }
-                    },
-                    validationRules: [{
-                        type: 'required',
-                        message: 'Please select a customer'
-                    }]
-                }]
-            };
-            return vendingForm;
-        }
-
-        /**
-         * Save form data
-         * @returns {Object} Vending Form data
-         */
-        function saveVending(vendingObj) {
-            var ref = rootRef.child('tenant-vendings').child(tenantId);
-            vendingObj.user = auth.$getAuth().uid;
-            vendingObj.date = vendingObj.date.toString();
-            return firebaseUtils.addData(ref, vendingObj);
-        }
-
-        /**
-         * Fetch vending list
-         * @returns {Object} Vending data
-         */
-        function fetchVendingList() {
-            var ref = rootRef.child('tenant-vendings').child(tenantId).orderByChild('deactivated').equalTo(null);
-            return firebaseUtils.fetchList(ref);
-        }
-
-        function saveInvoiceVending(vendingObj) {
-            var ref = rootRef.child('tenant-vendings-info').child(tenantId);
-            vendingObj.user = auth.$getAuth().uid;
-            firebaseUtils.addData(ref, vendingObj);
-            updateQuantity(vendingObj.invoice);
-        }
-
-        function fetchInvoiceVendingList(key) {
-            var ref = rootRef.child('tenant-vendings-info').child(tenantId).orderByChild('invoice').equalTo(key);
-            return firebaseUtils.fetchList(ref);
-        }
-
-        function updateInvoiceVending(key, vendingObj) {
-            var ref = rootRef.child('tenant-vendings-info').child(tenantId).child(key['$id']);
-            firebaseUtils.updateData(ref, vendingObj);
-            updateQuantity(vendingObj.invoice);
-        }
-
-        function deleteInvoiceVending(key, vendingObj) {
-            var ref = rootRef.child('tenant-vendings-info').child(tenantId).child(key['$id']);
-            firebaseUtils.updateData(ref, { invoice: false });
-            updateQuantity(vendingObj);
-        }
-        
-        function updateQuantity(key) {
-            fetchInvoiceVendingList(key).then(function(data) {
-                var sum = 0;
-                data.forEach(function(info){
-                    sum+= info.quantity;
-                });
-                var ref = rootRef.child('tenant-vendings').child(tenantId).child(key);
-                firebaseUtils.updateData(ref, {quantity: sum});
-            });
-        }
-
-        /**
-         * Fetch vending list
-         * @returns {Object} Vending data
-         */
-        function updateVending(key, vendingData) {
-            var ref = rootRef.child('tenant-vendings').child(tenantId).child(key['$id']);
-            return firebaseUtils.updateData(ref, vendingData);
-        }
-
-        /**
-         * Delete Vending
-         * @returns {Object} vending data
-         */
-        function deleteVending(key) {
-            var ref = rootRef.child('tenant-vendings').child(tenantId).child(key['$id']);
-            return firebaseUtils.updateData(ref, { deactivated: false });
-        }
-
-    }
-}());
-(function () {
-    'use strict';
-
-    shipmentService.$inject = ["$firebaseArray", "$firebaseObject", "$q", "authService", "auth", "firebaseUtils", "dxUtils", "config"];
-    angular
-        .module('app.shipments')
-        .factory('shipmentService', shipmentService);
-
-    /** @ngInject */
-    function shipmentService($firebaseArray, $firebaseObject, $q, authService, auth, firebaseUtils, dxUtils, config) {
-        var tenantId = authService.getCurrentTenant(),
-            formInstance,
-            customerList,
-            statusList,
-            chargesList,
-            formData;
-        // Private variables
-
-        var service = {
-            gridOptions: gridOptions,
-            saveShipment: saveShipment,
-            updateShipment: updateShipment,
-            fetchShipmentList: fetchShipmentList,
-            shipmentForm: shipmentForm
-        };
-
-        return service;
-
-        //////////
-
-        function shipmentForm() {
-            var infiniteListSource = new DevExpress.data.DataSource({
-                load: function(loadOptions) {
-                    var defer = $q.defer(),
-                        ref = rootRef.child('tenant-customers').child(tenantId).orderByChild('deactivated').equalTo(null);
-                    firebaseUtils.fetchList(ref).then(function (data) {
-                        defer.resolve(data);
-                    });
-                    return defer.promise;
-                },
-                byKey: function(key) {
-                    var defer = $q.defer(),
-                    ref = rootRef.child('tenant-customers').child(tenantId).child(key);
-                    firebaseUtils.getItemByRef(ref).then(function (data) {
-                        defer.resolve(data);
-                    });
-                    return defer.promise;
-                }
-            });
-            var shipmentForm = {
-                colCount: 2,
-                onInitialized: function (e) {
-                    formInstance = e.component;
-                },
-                items: [{
-                    itemType: "group",
-                    caption: "Booking Information",
-                    colSpan: 2,
-                    colCount: 2,
-                    items: [{
-                        dataField: 'status',
-                        label: {
-                            text: 'Shipment Status'
-                        },
-                        editorType: 'dxSelectBox',
-                        editorOptions: {
-                            dataSource: infiniteListSource,
-                            displayExpr: "name",
-                            valueExpr: "$id",
-                            onValueChanged: function (e) {
-                                formInstance.updateData(
-                                    {'contactRef': 'Adarsh',
-                                     'bookingDate': e.value
-                                    }
-                                );
-                            },
-                            value: '-KhuU-0RamOA4LMLnCAF'
-                        }
-                    }, {
-                        dataField: 'bookingDate',
-                        label: {
-                            text: 'Booking Date'
-                        }
-                    }, {
-                        dataField: 'contactRef',
-                        label: {
-                            text: 'Contact'
-                        },
-                        editorType: 'dxTextBox'
-                    },
-                     {
-                        dataField: 'formatID',
-                        label: {
-                            text: 'formatID'
-                        },
-                        editorType: 'dxTextBox'
-                    }, {
-                        dataField: 'chargeTo',
-                        label: {
-                            text: 'Charge To'
-                        },
-                        editorType: 'dxSelectBox'
-                    }, {
-                        dataField: 'shipper',
-                        label: {
-                            text: 'Shipper'
-                        },
-                        editorType: 'dxSelectBox'
-                    }, {
-                        dataField: 'requestedPickupDate',
-                        label: {
-                            text: 'Required Pickup'
-                        },
-                        editorType: 'dxDateBox'
-                    }, {
-                        dataField: 'requestedDeliveryDate',
-                        label: {
-                            text: 'Required Delivery'
-                        },
-                        editorType: 'dxDateBox'
-                    }]
-                }, {
-                    itemType: "group",
-                    caption: "Consignor",
-                    items: [{
-                        dataField: 'consignor',
-                        label: {
-                            text: 'Select Consignor'
-                        },
-                        editorType: 'dxSelectBox'
-                    }, "Phone", "Address", "City", "State", "Zipcode"]
-                }, {
-                    itemType: "group",
-                    caption: "Consignee",
-                    items: [{
-                        dataField: 'consignee',
-                        label: {
-                            text: 'Select Consignee'
-                        },
-                        editorType: 'dxSelectBox'
-                    },
-                        "Phone", "Address", "City", "State", "Zipcode"]
-                }, {
-                    itemType: "group",
-                    caption: "Contact Information",
-                    colSpan: 2,
-                    items: [{
-                        itemType: "tabbed",
-                        tabPanelOptions: {
-                            deferRendering: false
-                        },
-                        tabs: [{
-                            title: "Items",
-                            items: ["Phone"]
-                        }, {
-                            title: "Charges",
-                            items: ["Skype"]
-                        }, {
-                            title: "Documents",
-                            items: ["Email"]
-                        }]
-                    }]
-                }]
-            };
-            return shipmentForm;
-        }
-        /**
-         * Grid Options for shipment list
-         * @param {Object} dataSource 
-         */
-        function gridOptions(dataSource) {
-            var gridOptions = dxUtils.createGrid(),
-                otherConfig = {
-                    dataSource: {
-                        load: function () {
-                            var defer = $q.defer();
-                            fetchShipmentList().then(function (data) {
-                                console.log(data);
-                                defer.resolve(data);
-                            });
-                            return defer.promise;
-                        },
-                        insert: function (shipmentObj) {
-                            saveShipment(formInstance.option('formData'));
-                        },
-                        update: function (key, shipmentObj) {
-                            updateShipment(key, shipmentObj);
-                        },
-                        remove: function (key) {
-                            deleteShipment(key);
-                        }
-                    },
-                    summary: {
-                        totalItems: [{
-                            column: 'name',
-                            summaryType: 'count'
-                        }]
-                    },
-                    editing: {
-                        allowAdding: true,
-                        allowUpdating: true,
-                        allowDeleting: true,
-                        mode: 'form',
-                        form: shipmentForm()
-                    },
-                    columns: config.shipmentGridCols(),
-                    export: {
-                        enabled: true,
-                        fileName: 'Shipments',
-                        allowExportSelectedData: true
-                    },
-                    onToolbarPreparing: function (e) {
-                        var dataGrid = e.component;
-
-                        e.toolbarOptions.items.unshift({
-                            location: "before",
-                            widget: "dxSelectBox",
-                            options: {
-                                width: 200,
-                                items: [{
-                                    value: "CustomerStoreState",
-                                    text: "Grouping by State"
-                                }, {
-                                    value: "Employee",
-                                    text: "Grouping by Employee"
-                                }],
-                                displayExpr: "text",
-                                valueExpr: "value",
-                                value: "CustomerStoreState",
-                                onValueChanged: function (e) {
-                                    dataGrid.clearGrouping();
-                                    dataGrid.columnOption(e.value, "groupIndex", 0);
-                                }
-                            }
-                        }, {
-                                location: "before",
-                                widget: "dxButton",
-                                options: {
-                                    hint: "Collapse All",
-                                    icon: "chevrondown",
-                                    onClick: function (e) {
-                                        var expanding = e.component.option("icon") === "chevronnext";
-                                        dataGrid.option("grouping.autoExpandAll", expanding);
-                                        e.component.option({
-                                            icon: expanding ? "chevrondown" : "chevronnext",
-                                            hint: expanding ? "Collapse All" : "Expand All"
-                                        });
-                                    }
-                                }
-                            }, {
-                                location: "after",
-                                widget: "dxButton",
-                                options: {
-                                    icon: "refresh",
-                                    onClick: function () {
-                                        dataGrid.refresh();
-                                    }
-                                }
-                            });
-                    }
-
-                };
-
-            angular.extend(gridOptions, otherConfig);
-            return gridOptions;
-        };
-
-        /**
-         * Save form data
-         * @returns {Object} Shipment Form data
-         */
-        function saveShipment(shipmentObj) {
-            var ref = rootRef.child('tenant-shipments').child(tenantId);
-            shipmentObj.user = auth.$getAuth().uid;
-            return firebaseUtils.addData(ref, shipmentObj);
-        }
-
-        /**
-         * Fetch shipment list
-         * @returns {Object} Shipment data
-         */
-        function fetchShipmentList() {
-            var ref = rootRef.child('tenant-shipments').child(tenantId).orderByChild('deactivated').equalTo(null);
-            return firebaseUtils.fetchList(ref);
-        }
-
-        /**
-         * Fetch shipment list
-         * @returns {Object} Shipment data
-         */
-        function updateShipment(key, shipmentData) {
-            var ref = rootRef.child('tenant-shipments').child(tenantId).child(key['$id']);
-            return firebaseUtils.updateData(ref, shipmentData);
-        }
-
-        /**
-         * Delete Shipment
-         * @returns {Object} shipment data
-         */
-        function deleteShipment(key) {
-            var ref = rootRef.child('tenant-shipments').child(tenantId).child(key['$id']);
-            return firebaseUtils.updateData(ref, { deactivated: false });
-        }
-
-    }
-}());
-(function () {
-    'use strict';
-
-    recordService.$inject = ["$firebaseArray", "$firebaseObject", "$q", "authService", "auth", "firebaseUtils", "dxUtils", "config"];
-    angular
-        .module('app.records')
-        .factory('recordService', recordService);
-
-    /** @ngInject */
-    function recordService($firebaseArray, $firebaseObject, $q, authService, auth, firebaseUtils, dxUtils, config) {
-        var tenantId = authService.getCurrentTenant(),
-            formInstance,
-            customerList,
-            statusList,
-            chargesList,
-            formData;
-        // Private variables
-
-        var service = {
-            gridOptions: gridOptions,
-            saveRecord: saveRecord,
-            updateRecord: updateRecord,
-            fetchRecordList: fetchRecordList,
-            recordForm: recordForm
-        };
-
-        return service;
-
-        //////////
-
-        function recordForm(customerList, beerList) {
-            var recordForm = {
-                onInitialized: function (e) {
-                    formInstance = e.component;
-                },
-                items: [{
-                    itemType: "group",
-                    caption: "Information",
-                    colSpan: 2,
-                    colCount: 2,
-                    items: [
-                        {
-                            dataField: 'date',
-                            label: {
-                                text: 'Date'
-                            },
-                            editorType: 'dxDateBox',
-                            editorOptions: {
-                                width: '100%',
-                                onInitialized: function (e) {
-                                    e.component.option('value', new Date());
-                                }
-                            },
-                            validationRules: [{
-                                type: 'required',
-                                message: 'Date is required'
-                            }]
-                        }, {
-                            dataField: 'invoice',
-                            label: {
-                                text: 'Invoice'
-                            },
-                            validationRules: [{
-                                type: 'required',
-                                message: 'Invoice number is required'
-                            }]
-                        }, {
-                            dataField: 'customerSelected',
-                            label: {
-                                text: 'Customer'
-                            },
-                            editorType: 'dxSelectBox',
-                            editorOptions: {
-                                dataSource: customerList,
-                                displayExpr: "name",
-                                valueExpr: "$id",
-                                searchExpr: ["name", "phone", "HHID"],
-                                itemTemplate: function (itemData, itemIndex, itemElement) {
-                                    var rightBlock = $("<div style='display:inline-block;'>");
-                                    rightBlock.append("<p style='font-size:larger;'><b>" + itemData.name + "</b></p>");
-                                    rightBlock.append("<p>Phone: <span>" + itemData.phone + "</span></p>");
-                                    rightBlock.append("<p>HopHead ID: <span>" + itemData.HHID + "</span></p>");
-                                    itemElement.append(rightBlock);
-                                }, onSelectionChanged: function (customer) {
-                                    if (customer.selectedItem && customer.selectedItem.$id) {
-                                        formInstance.getEditor('offers').option('items', '');
-                                        var ref = rootRef.child('tenant-record-offers').child(tenantId).orderByChild('deactivated').equalTo(null);
-                                        firebaseUtils.fetchList(ref).then(function (data) {
-                                            var selectedList = [];
-                                            for(var item = 0; item< data.length; item++) {
-                                                if(data[item].customers && (!data[item].customers.hasOwnProperty(customer.selectedItem.$id) || data[item].customers[customer.selectedItem.$id] === false)) {
-                                                    selectedList.push(data[item]);
-                                                } else if(!data[item].customers) {
-                                                    selectedList.push(data[item]);
-                                                }
-                                            }
-                                            formInstance.getEditor('offers').option('items', selectedList);
-                                        });
-                                    }
-                                }
-                            },
-                            validationRules: [{
-                                type: 'required',
-                                message: 'Please select a customer'
-                            }]
-                        }, 'amountOnBeer', 'amountOnLiquor', 'amountOnFood'
-                    ]
-                },
-                {
-                    itemType: "group",
-                    caption: "Redeem Offers",
-                    colSpan: 2,
-                    colCount: 2,
-                    items: [{
-                        dataField: 'offers',
-                        label: {
-                            text: 'Select Offers'
-                        },
-                        name: 'offers',
-                        editorOptions: {
-                            displayExpr: "description",
-                            valueExpr: "$id",
-                            noDataText: 'No offers available',
-                            showSelectionControls: true,
-                            applyValueMode: "useButtons"
-                        },
-                        editorType: 'dxTagBox'
-                    }]
-                }]
-            };
-            return recordForm;
-        }
-        /**
-         * Grid Options for record list
-         * @param {Object} dataSource 
-         */
-        function gridOptions(dataSource, customers, beers) {
-            var gridOptions = dxUtils.createGrid(),
-                otherConfig = {
-                    dataSource: {
-                        load: function () {
-                            var defer = $q.defer();
-                            fetchRecordList().then(function (data) {
-                                defer.resolve(data);
-                            });
-                            return defer.promise;
-                        },
-                        insert: function (recordObj) {
-                            var data = formInstance.option('formData');
-                            if (data.offers) {
-                                recordObj.offers = data.offers;
-                            }
-                            saveRecord(recordObj);
-                        },
-                        update: function (key, recordObj) {
-                            var data = formInstance.option('formData');
-                            if (data.offers) {
-                                recordObj.offers = data.offers;
-                            }
-                            updateRecord(key, recordObj);
-                        },
-                        remove: function (key) {
-                            deleteRecord(key);
-                        }
-                    },
-                    summary: {
-                        totalItems: [{
-                            column: 'amountOnLiquor',
-                            summaryType: 'sum'
-                        }, {
-                            column: 'amountOnBeer',
-                            summaryType: 'sum'
-                        }, {
-                            column: 'amountOnFood',
-                            summaryType: 'sum'
-                        }, {
-                            column: 'total',
-                            summaryType: 'sum',
-                            customizeText: function (data) {
-                                return 'Total ' + data.value;
-                            }
-                        }]
-                    },
-                    editing: {
-                        allowAdding: true,
-                        allowUpdating: false,
-                        allowDeleting: true,
-                        mode: 'form',
-                        form: recordForm(customers, beers)
-                    },
-                    columns: config.recordGridCols(tenantId, customers, beers),
-                    export: {
-                        enabled: true,
-                        fileName: 'Records',
-                        allowExportSelectedData: true
-                    }
-
-                };
-
-            angular.extend(gridOptions, otherConfig);
-            return gridOptions;
-        };
-
-        /**
-         * Save form data
-         * @returns {Object} Record Form data
-         */
-        function saveRecord(recordObj) {
-            var ref = rootRef.child('tenant-records').child(tenantId);
-            if (!recordObj.date) {
-                recordObj.date = new Date();
-            }
-            recordObj.date = recordObj.date.toString();
-            recordObj.user = auth.$getAuth().uid;
-            firebaseUtils.addData(ref, recordObj).then(function (key) {
-                var mergeObj = {};
-                mergeObj['tenant-customer-records/' + tenantId + '/' + recordObj.customerSelected + '/records/' + key] = recordObj;
-                if(recordObj.offers) {
-                    mergeObj['tenant-customer-records/' + tenantId + '/' + recordObj.customerSelected + '/offers/' + key] = recordObj.offers;
-                }
-                firebaseUtils.updateData(rootRef, mergeObj).then(function(data) {
-                    if(!recordObj.offers) {
-                        return;
-                    }
-                    var ref = rootRef.child('tenant-record-offers').child(tenantId).orderByChild('deactivated').equalTo(null);
-                    firebaseUtils.fetchList(ref).then(function(offers) {
-                        var mergeObj = {};
-                        for(var i=0; i< recordObj.offers.length; i++) {
-                            if(config.getIndexByArray(offers, '$id', recordObj.offers[i]) > -1) {
-                                mergeObj['tenant-record-offers/' + tenantId + '/' + recordObj.offers[i] + '/customers/' + recordObj.customerSelected] = recordObj.invoice;
-                            }
-                        }
-                        return firebaseUtils.updateData(rootRef, mergeObj);
-                    });
-                });
-            });
-        }
-
-        /**
-         * Fetch record list
-         * @returns {Object} Record data
-         */
-        function fetchRecordList() {
-            var ref = rootRef.child('tenant-records').child(tenantId).orderByChild('deactivated').equalTo(null);
-            return firebaseUtils.fetchList(ref);
-        }
-
-        /**
-         * Fetch record list
-         * @returns {Object} Record data
-         */
-        function updateRecord(key, recordData) {
-            var ref = rootRef.child('tenant-records').child(tenantId).child(key['$id']);
-            firebaseUtils.updateData(ref, recordData).then(function (key) {
-                var mergeObj = {};
-                mergeObj['tenant-customer-records/' + tenantId + '/' + key.customerSelected + '/records/' + key['$id']] = recordData;
-                firebaseUtils.updateData(rootRef, mergeObj);
-            });;
-        }
-
-        /**
-         * Delete Record
-         * @returns {Object} record data
-         */
-        function deleteRecord(key) {
-            var mergeObj = {};
-            mergeObj['tenant-records/' + tenantId + '/' + key['$id'] + '/deactivated'] = false;
-            mergeObj['tenant-customer-records/' + tenantId + '/' + key.customerSelected + '/records/' + key['$id'] + '/deactivated'] = false;
-            //mergeObj['tenant-bulkbuy-records-deactivated/'+ tenantId + '/' + key['$id']] = key;
-            mergeObj['tenant-customer-records/' + tenantId + '/' + key.customerSelected + '/offers/' + key['$id'] + '/deactivated'] = false;
-            firebaseUtils.updateData(rootRef, mergeObj).then(function(records) {
-                var mergeObj = {};
-                if(key.offers) {
-                    var ref = rootRef.child('tenant-record-offers').child(tenantId).orderByChild('deactivated').equalTo(null);
-                    firebaseUtils.fetchList(ref).then(function(offers) {
-                        var mergeObj = {};
-                        for(var i=0; i< key.offers.length; i++) {
-                            if(config.getIndexByArray(offers, '$id', key.offers[i]) > -1) {
-                                mergeObj['tenant-record-offers/' + tenantId + '/' + key.offers[i] + '/customers/' + key.customerSelected] = false;
-                            }
-                        }
-                        return firebaseUtils.updateData(rootRef, mergeObj);
-                    });
-                }
-            });
-        }
-
-    }
-}());
-(function () {
-    'use strict';
-
-    bulkbuyService.$inject = ["$rootScope", "$firebaseArray", "$firebaseObject", "$q", "authService", "auth", "firebaseUtils", "dxUtils", "config"];
-    angular
-        .module('app.bulkbuys')
-        .factory('bulkbuyService', bulkbuyService);
-
-    /** @ngInject */
-    function bulkbuyService($rootScope, $firebaseArray, $firebaseObject, $q, authService, auth, firebaseUtils, dxUtils, config) {
-        var tenantId = authService.getCurrentTenant(),
-            quantityList = [{
-                id: 0,
-                quantity: 6
-            }, {
-                id: 1,
-                quantity: 10
-            }, {
-                id: 2,
-                quantity: 20
-            }];
-        // Private variables
-
-        var service = {
-            saveBulkbuy: saveBulkbuy,
-            updateBulkbuy: updateBulkbuy,
-            fetchBulkbuyList: fetchBulkbuyList,
-            deleteBulkbuy: deleteBulkbuy
-        };
-
-        return service;
-        /**
-         * Save form data
-         * @returns {Object} Bulkbuy Form data
-         */
-        function saveBulkbuy(bulkbuyObj) {
-            var ref = rootRef.child('tenant-bulkbuys').child(tenantId);
-            if (!bulkbuyObj.date) {
-                bulkbuyObj.date = new Date();
-            }
-            bulkbuyObj.date = bulkbuyObj.date.toString();
-            bulkbuyObj.balancedQuantity = quantityList[bulkbuyObj.quantity].quantity;
-            return firebaseUtils.addData(ref, bulkbuyObj).then(function (key) {
-                var mergeObj = {};
-                mergeObj['tenant-customer-bulkbuy-records/' + tenantId + '/' + bulkbuyObj.customerSelected + '/records/' + key] = bulkbuyObj;
-                firebaseUtils.updateData(rootRef, mergeObj).then(function (key) {
-                    var ref = rootRef.child('tenant-customer-bulkbuy-records').child(tenantId).child(bulkbuyObj.customerSelected).child('records').orderByChild('deactivated').equalTo(null);
-                    firebaseUtils.getListSum(ref, 'balancedQuantity').then(function (data) {
-                        var mergeObj = {};
-                        mergeObj['tenant-customer-bulkbuy-records/' + tenantId + '/' + bulkbuyObj.customerSelected + '/balancedQuantity'] = data;
-                        firebaseUtils.updateData(rootRef, mergeObj);
-                    });
-                });
-            });
-            //updateKegQuantity();
-        }
-
-        function updateKegQuantity() {
-            fetchBulkbuyList().then(function (data) {
-                data.forEach(function (bulkbuy) {
-                    var ref = rootRef.child('tenant-kegs').child(tenantId).orderByChild('beerSelected').equalTo(bulkbuy.beerSelected);
-                    firebaseUtils.fetchList(ref).then(function (data) {
-                        updateDb(data, quantityList[bulkbuy.quantity].quantity);
-                    });
-                });
-            });
-
-        }
-
-
-        function hasMin(data, attrib) {
-            return data.reduce(function (prev, curr) {
-                return prev[attrib] < curr[attrib] ? prev : curr;
-            });
-        }
-        function updateDb(data, quantity) {
-            var smallestBrew = hasMin(data, 'LtrsBalanced');
-            var ref = rootRef.child('tenant-kegs').child(tenantId).child(smallestBrew['$id']);
-            if (smallestBrew.LtrsBalanced < quantity) {
-                firebaseUtils.updateData(ref, { 'LtrsBalanced': 0 });
-                var index = getIndexByArray(data, 'LtrsBalanced', smallestBrew.LtrsBalanced);
-                data.splice(index, 1);
-                updateDb(data, quantity - smallestBrew.LtrsBalanced);
-            } else {
-                var balance = smallestBrew.LtrsBalanced - quantity;
-                firebaseUtils.updateData(ref, { 'LtrsBalanced': balance });
-            }
-
-        }
-
-        function getIndexByArray(data, key, value) {
-            for (var i = 0; i < data.length; i++) {
-                if (data[i][key] == value) {
-                    return i;
-                }
-            }
-            return -1;
-        }
-
-        /**
-         * Fetch bulkbuy list
-         * @returns {Object} Bulkbuy data
-         */
-        function fetchBulkbuyList() {
-            var ref = rootRef.child('tenant-bulkbuys').child(tenantId).orderByChild('deactivated').equalTo(null);
-            return firebaseUtils.fetchList(ref);
-        }
-
-        /**
-         * Fetch bulkbuy list
-         * @returns {Object} Bulkbuy data
-         */
-        function updateBulkbuy(key, bulkbuyData) {
-            var mergeObj = {};
-            mergeObj['tenant-bulkbuys/' + tenantId + '/' + key['$id']] = bulkbuyData;
-            mergeObj['tenant-customer-bulkbuy-records/' + tenantId + '/' + bulkbuyData.customerSelected + '/records/' + key['$id']] = bulkbuyData;
-            firebaseUtils.updateData(rootRef, mergeObj).then(function (key) {
-                var ref = rootRef.child('tenant-customer-bulkbuy-records').child(tenantId).child(bulkbuyData.customerSelected).child('records').orderByChild('deactivated').equalTo(null);
-                firebaseUtils.getListSum(ref, 'balancedQuantity').then(function (data) {
-                    var mergeObj = {};
-                    mergeObj['tenant-customer-bulkbuy-records/' + tenantId + '/' + bulkbuyData.customerSelected + '/balancedQuantity'] = data;
-                    firebaseUtils.updateData(rootRef, mergeObj);
-                });
-            });
-            //updateKegQuantity();
-        }
-
-        /**
-         * Delete Bulkbuy
-         * @returns {Object} bulkbuy data
-         */
-        function deleteBulkbuy(key) {
-            var mergeObj = {};
-            mergeObj['tenant-bulkbuys/' + tenantId + '/' + key['$id'] + '/deactivated'] = false;
-            mergeObj['tenant-customer-bulkbuy-records/' + tenantId + '/' + key.customerSelected + '/records/' + key['$id'] + '/deactivated'] = false;
-            //mergeObj['tenant-bulkbuy-records-deactivated/'+ tenantId + '/' + key['$id']] = key;
-            firebaseUtils.updateData(rootRef, mergeObj).then(function () {
-                var ref = rootRef.child('tenant-customer-bulkbuy-records').child(tenantId).child(key.customerSelected).child('records').orderByChild('deactivated').equalTo(null);
-                firebaseUtils.getListSum(ref, 'balancedQuantity').then(function (data) {
-                    var mergeObj = {};
-                    mergeObj['tenant-customer-bulkbuy-records/' + tenantId + '/' + key.customerSelected + '/balancedQuantity'] = data;
-                    firebaseUtils.updateData(rootRef, mergeObj);
-                });
-            });
-            //updateKegQuantity();
-        }
-
-    }
-}());
-(function () {
-    'use strict';
-
-    bookingService.$inject = ["$firebaseArray", "$firebaseObject", "$q", "authService", "auth", "firebaseUtils", "dxUtils", "config"];
-    angular
-        .module('app.bookings')
-        .factory('bookingService', bookingService);
-
-    /** @ngInject */
-    function bookingService($firebaseArray, $firebaseObject, $q, authService, auth, firebaseUtils, dxUtils, config) {
-        var tenantId = authService.getCurrentTenant(),
-            formInstance,
-            customerList,
-            statusList,
-            chargesList,
-            formData;
-        // Private variables
-
-        var service = {
-            gridOptions: gridOptions,
-            saveBooking: saveBooking,
-            updateBooking: updateBooking,
-            fetchBookingList: fetchBookingList,
-            bookingForm: bookingForm
-        };
-
-        var quantityList = [{
-                            id: 0,
-                            quantity: 3
-                        }, {
-                            id: 1,
-                            quantity: 5
-                        }, {
-                            id: 2,
-                            quantity: 10
-                        }, {
-                            id: 3,
-                            quantity: 15
-                        }];
-        return service;
-
-        //////////
-
-        function bookingForm(customerList, beerList) {
-            var bookingForm = {
-                colCount: 2,
-                onInitialized: function (e) {
-                    formInstance = e.component;
-                },
-                items: [{
-                    dataField: 'date',
-                    label:{
-                        text: 'Date'
-                    }, 
-                    editorType: 'dxDateBox',
-                    editorOptions: {
-                    },
-                    validationRules: [{
-                        type: 'required',
-                        message: 'Date is required'
-                    }]
-                }, {
-                    dataField: 'beerSelected',
-                    label: { 
-                        text: 'Brew'
-                    },
-                    editorType: 'dxSelectBox',
-                    editorOptions: {
-                        dataSource: beerList,
-                        displayExpr: "name",
-                        valueExpr: "$id"
-                    },
-                    validationRules: [{
-                        type: 'required',
-                        message: 'Please select a brew'
-                    }]
-                }, {
-                    dataField: 'customerSelected',
-                    label: {
-                        text: 'Customer'
-                    },
-                    editorType: 'dxSelectBox',
-                    editorOptions: {
-                        dataSource: customerList,
-                        displayExpr: "name",
-                        valueExpr: "$id",
-                        searchExpr: ["name", "phone", "HHID"],
-                        itemTemplate: function(itemData, itemIndex, itemElement) {
-                            var rightBlock = $("<div style='display:inline-block;'>");
-                            rightBlock.append("<p style='font-size:larger;'><b>" + itemData.name + "</b></p>");
-                            rightBlock.append("<p>Phone: <span>" + itemData.phone + "</span></p>");
-                            rightBlock.append("<p>HopHead ID: <span>" + itemData.HHID + "</span></p>");
-                            itemElement.append(rightBlock);
-                        }
-                    },
-                    validationRules: [{
-                        type: 'required',
-                        message: 'Please select a customer'
-                    }]
-                }, {
-                    dataField: "quantity",
-                    label: {
-                        text: "quantity (Ltrs)"
-                    },
-                    editorType: 'dxSelectBox',
-                    editorOptions: {
-                        dataSource: quantityList,
-                        displayExpr: "quantity",
-                        valueExpr: "id"
-                    },
-                    validationRules: [{
-                        type: 'required',
-                        message: 'Please select a quantity'
-                    }]
-                }]
-            };
-            return bookingForm;
-        }
-        /**
-         * Grid Options for booking list
-         * @param {Object} dataSource 
-         */
-        function gridOptions(dataSource, customers, beers) {
-            var gridOptions = dxUtils.createGrid(),
-                otherConfig = {
-                    dataSource: {
-                        load: function () {
-                            var defer = $q.defer();
-                            fetchBookingList().then(function (data) {
-                                defer.resolve(data);
-                            });
-                            return defer.promise;
-                        },
-                        insert: function (bookingObj) {
-                            var data = formInstance.option('formData');
-                            saveBooking(bookingObj);
-                        },
-                        update: function (key, bookingObj) {
-                            updateBooking(key, bookingObj);
-                        },
-                        remove: function (key) {
-                            deleteBooking(key);
-                        }
-                    },
-                    summary: {
-                        totalItems: [{
-                            column: 'name',
-                            summaryType: 'count'
-                        }]
-                    },
-                    editing: {
-                        allowAdding: true,
-                        allowUpdating: true,
-                        allowDeleting: true,
-                        mode: 'form',
-                        form: bookingForm(customers, beers)
-                    },
-                    columns: config.bookingGridCols(tenantId, customers, beers),
-                    export: {
-                        enabled: true,
-                        fileName: 'Bookings',
-                        allowExportSelectedData: true
-                    }
-
-                };
-
-            angular.extend(gridOptions, otherConfig);
-            return gridOptions;
-        };
-
-        /**
-         * Save form data
-         * @returns {Object} Booking Form data
-         */
-        function saveBooking(bookingObj) {
-            var ref = rootRef.child('tenant-bookings').child(tenantId);
-            bookingObj.date = bookingObj.date.toString();
-            bookingObj.user = auth.$getAuth().uid;
-            firebaseUtils.addData(ref, bookingObj);
-            updateKegQuantity();
-        }
-
-        function updateKegQuantity() {
-            fetchBookingList().then(function(data){
-                data.forEach(function(booking){
-                    var ref = rootRef.child('tenant-kegs').child(tenantId).orderByChild('beerSelected').equalTo(booking.beerSelected);
-                    firebaseUtils.fetchList(ref).then(function(data) {
-                    updateDb(data, quantityList[booking.quantity].quantity);
-                    });
-                });
-            });
-            
-        }
-
-        
-        function hasMin(data, attrib) {
-                return data.reduce(function(prev, curr){ 
-                    return prev[attrib] < curr[attrib] ? prev : curr; 
-                });
-            }
-        function updateDb(data, quantity) {
-            var smallestBrew = hasMin(data,'LtrsBalanced');  
-            var ref = rootRef.child('tenant-kegs').child(tenantId).child(smallestBrew['$id']);
-            if(smallestBrew.LtrsBalanced < quantity) {
-                firebaseUtils.updateData(ref, {'LtrsBalanced': 0});
-                var index = getIndexByArray(data, 'LtrsBalanced', smallestBrew.LtrsBalanced);
-                data.splice(index,1);
-                updateDb(data, quantity - smallestBrew.LtrsBalanced);
-            } else {
-                var balance = smallestBrew.LtrsBalanced - quantity;
-                firebaseUtils.updateData(ref, {'LtrsBalanced': balance });
-            }            
-            
-        }
-
-        function getIndexByArray(data, key, value) {
-            for(var i = 0; i< data.length; i++) {
-                if(data[i][key] == value) {
-                    return i;
-                }
-            }
-            return -1;
-        }
-        
-        /**
-         * Fetch booking list
-         * @returns {Object} Booking data
-         */
-        function fetchBookingList() {
-            var ref = rootRef.child('tenant-bookings').child(tenantId).orderByChild('deactivated').equalTo(null);
-            return firebaseUtils.fetchList(ref);
-        }
-
-        /**
-         * Fetch booking list
-         * @returns {Object} Booking data
-         */
-        function updateBooking(key, bookingData) {
-            var ref = rootRef.child('tenant-bookings').child(tenantId).child(key['$id']);
-            firebaseUtils.updateData(ref, bookingData);
-            updateKegQuantity();
-        }
-
-        /**
-         * Delete Booking
-         * @returns {Object} booking data
-         */
-        function deleteBooking(key) {
-            var ref = rootRef.child('tenant-bookings').child(tenantId).child(key['$id']);
-            firebaseUtils.updateData(ref, { deactivated: false });
-            updateKegQuantity();
         }
 
     }
@@ -5668,6 +4525,1195 @@
 
     }
 }());
+(function () {
+    'use strict';
+
+    vendingService.$inject = ["$rootScope", "$firebaseArray", "$firebaseObject", "$q", "authService", "auth", "firebaseUtils", "dxUtils", "config"];
+    angular
+        .module('app.vendings')
+        .factory('vendingService', vendingService);
+
+    /** @ngInject */
+    function vendingService($rootScope,$firebaseArray, $firebaseObject, $q, authService, auth, firebaseUtils, dxUtils, config) {
+        var tenantId = authService.getCurrentTenant(),
+            formInstance,
+            customerList,
+            statusList,
+            chargesList,
+            formData,
+            brewGridInstance,
+            currentTxn,
+            brewDataSource = [];
+        // Private variables
+
+        var service = {
+            saveVending: saveVending,
+            updateVending: updateVending,
+            fetchVendingList: fetchVendingList,
+            vendingForm: vendingForm,
+            deleteVending: deleteVending,
+            fetchInvoiceVendingList: fetchInvoiceVendingList,
+            saveInvoiceVending: saveInvoiceVending,
+            updateInvoiceVending: updateInvoiceVending,
+            deleteInvoiceVending: deleteInvoiceVending
+        };
+
+        return service;
+
+        //////////
+
+        function vendingForm(customerList, beerList) {
+            var vendingForm = {
+                colCount: 2,
+                onInitialized: function (e) {
+                    formInstance = e.component;
+                },
+                items: [{
+                    dataField: 'date',
+                    label:{
+                        text: 'Date'
+                    }, 
+                    editorType: 'dxDateBox',
+                    editorOptions: {
+                    },
+                    validationRules: [{
+                        type: 'required',
+                        message: 'Date is required'
+                    }]
+                }, {
+                    dataField: 'invoice',
+                    label: {
+                        text: 'Invoice #'
+                    }
+                }, {
+                    dataField: 'customerSelected',
+                    label: {
+                        text: 'Customer'
+                    },
+                    editorType: 'dxSelectBox',
+                    editorOptions: {
+                        dataSource: customerList,
+                        displayExpr: "name",
+                        valueExpr: "$id",
+                        searchExpr: ["name", "phone", "HHID"],
+                        itemTemplate: function(itemData, itemIndex, itemElement) {
+                            var rightBlock = $("<div style='display:inline-block;'>");
+                            rightBlock.append("<p style='font-size:larger;'><b>" + itemData.name + "</b></p>");
+                            rightBlock.append("<p>Phone: <span>" + itemData.phone + "</span></p>");
+                            rightBlock.append("<p>HopHead ID: <span>" + itemData.HHID + "</span></p>");
+                            itemElement.append(rightBlock);
+                        }
+                    },
+                    validationRules: [{
+                        type: 'required',
+                        message: 'Please select a customer'
+                    }]
+                }]
+            };
+            return vendingForm;
+        }
+
+        /**
+         * Save form data
+         * @returns {Object} Vending Form data
+         */
+        function saveVending(vendingObj) {
+            var ref = rootRef.child('tenant-vendings').child(tenantId);
+            vendingObj.user = auth.$getAuth().uid;
+            vendingObj.date = vendingObj.date.toString();
+            return firebaseUtils.addData(ref, vendingObj);
+        }
+
+        /**
+         * Fetch vending list
+         * @returns {Object} Vending data
+         */
+        function fetchVendingList() {
+            var ref = rootRef.child('tenant-vendings').child(tenantId).orderByChild('deactivated').equalTo(null);
+            return firebaseUtils.fetchList(ref);
+        }
+
+        function saveInvoiceVending(vendingObj) {
+            var ref = rootRef.child('tenant-vendings-info').child(tenantId);
+            vendingObj.user = auth.$getAuth().uid;
+            firebaseUtils.addData(ref, vendingObj);
+            updateQuantity(vendingObj.invoice);
+        }
+
+        function fetchInvoiceVendingList(key) {
+            var ref = rootRef.child('tenant-vendings-info').child(tenantId).orderByChild('invoice').equalTo(key);
+            return firebaseUtils.fetchList(ref);
+        }
+
+        function updateInvoiceVending(key, vendingObj) {
+            var ref = rootRef.child('tenant-vendings-info').child(tenantId).child(key['$id']);
+            firebaseUtils.updateData(ref, vendingObj);
+            updateQuantity(vendingObj.invoice);
+        }
+
+        function deleteInvoiceVending(key, vendingObj) {
+            var ref = rootRef.child('tenant-vendings-info').child(tenantId).child(key['$id']);
+            firebaseUtils.updateData(ref, { invoice: false });
+            updateQuantity(vendingObj);
+        }
+        
+        function updateQuantity(key) {
+            fetchInvoiceVendingList(key).then(function(data) {
+                var sum = 0;
+                data.forEach(function(info){
+                    sum+= info.quantity;
+                });
+                var ref = rootRef.child('tenant-vendings').child(tenantId).child(key);
+                firebaseUtils.updateData(ref, {quantity: sum});
+            });
+        }
+
+        /**
+         * Fetch vending list
+         * @returns {Object} Vending data
+         */
+        function updateVending(key, vendingData) {
+            var ref = rootRef.child('tenant-vendings').child(tenantId).child(key['$id']);
+            return firebaseUtils.updateData(ref, vendingData);
+        }
+
+        /**
+         * Delete Vending
+         * @returns {Object} vending data
+         */
+        function deleteVending(key) {
+            var ref = rootRef.child('tenant-vendings').child(tenantId).child(key['$id']);
+            return firebaseUtils.updateData(ref, { deactivated: false });
+        }
+
+    }
+}());
+(function () {
+    'use strict';
+
+    shipmentService.$inject = ["$firebaseArray", "$firebaseObject", "$q", "authService", "auth", "firebaseUtils", "dxUtils", "config"];
+    angular
+        .module('app.shipments')
+        .factory('shipmentService', shipmentService);
+
+    /** @ngInject */
+    function shipmentService($firebaseArray, $firebaseObject, $q, authService, auth, firebaseUtils, dxUtils, config) {
+        var tenantId = authService.getCurrentTenant(),
+            formInstance,
+            customerList,
+            statusList,
+            chargesList,
+            formData;
+        // Private variables
+
+        var service = {
+            gridOptions: gridOptions,
+            saveShipment: saveShipment,
+            updateShipment: updateShipment,
+            fetchShipmentList: fetchShipmentList,
+            shipmentForm: shipmentForm
+        };
+
+        return service;
+
+        //////////
+
+        function shipmentForm() {
+            var infiniteListSource = new DevExpress.data.DataSource({
+                load: function(loadOptions) {
+                    var defer = $q.defer(),
+                        ref = rootRef.child('tenant-customers').child(tenantId).orderByChild('deactivated').equalTo(null);
+                    firebaseUtils.fetchList(ref).then(function (data) {
+                        defer.resolve(data);
+                    });
+                    return defer.promise;
+                },
+                byKey: function(key) {
+                    var defer = $q.defer(),
+                    ref = rootRef.child('tenant-customers').child(tenantId).child(key);
+                    firebaseUtils.getItemByRef(ref).then(function (data) {
+                        defer.resolve(data);
+                    });
+                    return defer.promise;
+                }
+            });
+            var shipmentForm = {
+                colCount: 2,
+                onInitialized: function (e) {
+                    formInstance = e.component;
+                },
+                items: [{
+                    itemType: "group",
+                    caption: "Booking Information",
+                    colSpan: 2,
+                    colCount: 2,
+                    items: [{
+                        dataField: 'status',
+                        label: {
+                            text: 'Shipment Status'
+                        },
+                        editorType: 'dxSelectBox',
+                        editorOptions: {
+                            dataSource: infiniteListSource,
+                            displayExpr: "name",
+                            valueExpr: "$id",
+                            onValueChanged: function (e) {
+                                formInstance.updateData(
+                                    {'contactRef': 'Adarsh',
+                                     'bookingDate': e.value
+                                    }
+                                );
+                            },
+                            value: '-KhuU-0RamOA4LMLnCAF'
+                        }
+                    }, {
+                        dataField: 'bookingDate',
+                        label: {
+                            text: 'Booking Date'
+                        }
+                    }, {
+                        dataField: 'contactRef',
+                        label: {
+                            text: 'Contact'
+                        },
+                        editorType: 'dxTextBox'
+                    },
+                     {
+                        dataField: 'formatID',
+                        label: {
+                            text: 'formatID'
+                        },
+                        editorType: 'dxTextBox'
+                    }, {
+                        dataField: 'chargeTo',
+                        label: {
+                            text: 'Charge To'
+                        },
+                        editorType: 'dxSelectBox'
+                    }, {
+                        dataField: 'shipper',
+                        label: {
+                            text: 'Shipper'
+                        },
+                        editorType: 'dxSelectBox'
+                    }, {
+                        dataField: 'requestedPickupDate',
+                        label: {
+                            text: 'Required Pickup'
+                        },
+                        editorType: 'dxDateBox'
+                    }, {
+                        dataField: 'requestedDeliveryDate',
+                        label: {
+                            text: 'Required Delivery'
+                        },
+                        editorType: 'dxDateBox'
+                    }]
+                }, {
+                    itemType: "group",
+                    caption: "Consignor",
+                    items: [{
+                        dataField: 'consignor',
+                        label: {
+                            text: 'Select Consignor'
+                        },
+                        editorType: 'dxSelectBox'
+                    }, "Phone", "Address", "City", "State", "Zipcode"]
+                }, {
+                    itemType: "group",
+                    caption: "Consignee",
+                    items: [{
+                        dataField: 'consignee',
+                        label: {
+                            text: 'Select Consignee'
+                        },
+                        editorType: 'dxSelectBox'
+                    },
+                        "Phone", "Address", "City", "State", "Zipcode"]
+                }, {
+                    itemType: "group",
+                    caption: "Contact Information",
+                    colSpan: 2,
+                    items: [{
+                        itemType: "tabbed",
+                        tabPanelOptions: {
+                            deferRendering: false
+                        },
+                        tabs: [{
+                            title: "Items",
+                            items: ["Phone"]
+                        }, {
+                            title: "Charges",
+                            items: ["Skype"]
+                        }, {
+                            title: "Documents",
+                            items: ["Email"]
+                        }]
+                    }]
+                }]
+            };
+            return shipmentForm;
+        }
+        /**
+         * Grid Options for shipment list
+         * @param {Object} dataSource 
+         */
+        function gridOptions(dataSource) {
+            var gridOptions = dxUtils.createGrid(),
+                otherConfig = {
+                    dataSource: {
+                        load: function () {
+                            var defer = $q.defer();
+                            fetchShipmentList().then(function (data) {
+                                console.log(data);
+                                defer.resolve(data);
+                            });
+                            return defer.promise;
+                        },
+                        insert: function (shipmentObj) {
+                            saveShipment(formInstance.option('formData'));
+                        },
+                        update: function (key, shipmentObj) {
+                            updateShipment(key, shipmentObj);
+                        },
+                        remove: function (key) {
+                            deleteShipment(key);
+                        }
+                    },
+                    summary: {
+                        totalItems: [{
+                            column: 'name',
+                            summaryType: 'count'
+                        }]
+                    },
+                    editing: {
+                        allowAdding: true,
+                        allowUpdating: true,
+                        allowDeleting: true,
+                        mode: 'form',
+                        form: shipmentForm()
+                    },
+                    columns: config.shipmentGridCols(),
+                    export: {
+                        enabled: true,
+                        fileName: 'Shipments',
+                        allowExportSelectedData: true
+                    },
+                    onToolbarPreparing: function (e) {
+                        var dataGrid = e.component;
+
+                        e.toolbarOptions.items.unshift({
+                            location: "before",
+                            widget: "dxSelectBox",
+                            options: {
+                                width: 200,
+                                items: [{
+                                    value: "CustomerStoreState",
+                                    text: "Grouping by State"
+                                }, {
+                                    value: "Employee",
+                                    text: "Grouping by Employee"
+                                }],
+                                displayExpr: "text",
+                                valueExpr: "value",
+                                value: "CustomerStoreState",
+                                onValueChanged: function (e) {
+                                    dataGrid.clearGrouping();
+                                    dataGrid.columnOption(e.value, "groupIndex", 0);
+                                }
+                            }
+                        }, {
+                                location: "before",
+                                widget: "dxButton",
+                                options: {
+                                    hint: "Collapse All",
+                                    icon: "chevrondown",
+                                    onClick: function (e) {
+                                        var expanding = e.component.option("icon") === "chevronnext";
+                                        dataGrid.option("grouping.autoExpandAll", expanding);
+                                        e.component.option({
+                                            icon: expanding ? "chevrondown" : "chevronnext",
+                                            hint: expanding ? "Collapse All" : "Expand All"
+                                        });
+                                    }
+                                }
+                            }, {
+                                location: "after",
+                                widget: "dxButton",
+                                options: {
+                                    icon: "refresh",
+                                    onClick: function () {
+                                        dataGrid.refresh();
+                                    }
+                                }
+                            });
+                    }
+
+                };
+
+            angular.extend(gridOptions, otherConfig);
+            return gridOptions;
+        };
+
+        /**
+         * Save form data
+         * @returns {Object} Shipment Form data
+         */
+        function saveShipment(shipmentObj) {
+            var ref = rootRef.child('tenant-shipments').child(tenantId);
+            shipmentObj.user = auth.$getAuth().uid;
+            return firebaseUtils.addData(ref, shipmentObj);
+        }
+
+        /**
+         * Fetch shipment list
+         * @returns {Object} Shipment data
+         */
+        function fetchShipmentList() {
+            var ref = rootRef.child('tenant-shipments').child(tenantId).orderByChild('deactivated').equalTo(null);
+            return firebaseUtils.fetchList(ref);
+        }
+
+        /**
+         * Fetch shipment list
+         * @returns {Object} Shipment data
+         */
+        function updateShipment(key, shipmentData) {
+            var ref = rootRef.child('tenant-shipments').child(tenantId).child(key['$id']);
+            return firebaseUtils.updateData(ref, shipmentData);
+        }
+
+        /**
+         * Delete Shipment
+         * @returns {Object} shipment data
+         */
+        function deleteShipment(key) {
+            var ref = rootRef.child('tenant-shipments').child(tenantId).child(key['$id']);
+            return firebaseUtils.updateData(ref, { deactivated: false });
+        }
+
+    }
+}());
+(function () {
+    'use strict';
+
+    recordService.$inject = ["$firebaseArray", "$firebaseObject", "$q", "authService", "auth", "firebaseUtils", "dxUtils", "config"];
+    angular
+        .module('app.records')
+        .factory('recordService', recordService);
+
+    /** @ngInject */
+    function recordService($firebaseArray, $firebaseObject, $q, authService, auth, firebaseUtils, dxUtils, config) {
+        var tenantId = authService.getCurrentTenant(),
+            formInstance,
+            customerList,
+            statusList,
+            chargesList,
+            formData;
+        // Private variables
+
+        var service = {
+            gridOptions: gridOptions,
+            saveRecord: saveRecord,
+            updateRecord: updateRecord,
+            fetchRecordList: fetchRecordList,
+            recordForm: recordForm
+        };
+
+        return service;
+
+        //////////
+
+        function recordForm(customerList, beerList) {
+            var recordForm = {
+                onInitialized: function (e) {
+                    formInstance = e.component;
+                },
+                items: [{
+                    itemType: "group",
+                    caption: "Information",
+                    colSpan: 2,
+                    colCount: 2,
+                    items: [
+                        {
+                            dataField: 'date',
+                            label: {
+                                text: 'Date'
+                            },
+                            editorType: 'dxDateBox',
+                            editorOptions: {
+                                width: '100%',
+                                onInitialized: function (e) {
+                                    e.component.option('value', new Date());
+                                }
+                            },
+                            validationRules: [{
+                                type: 'required',
+                                message: 'Date is required'
+                            }]
+                        }, {
+                            dataField: 'invoice',
+                            label: {
+                                text: 'Invoice'
+                            },
+                            validationRules: [{
+                                type: 'required',
+                                message: 'Invoice number is required'
+                            }]
+                        }, {
+                            dataField: 'customerSelected',
+                            label: {
+                                text: 'Customer'
+                            },
+                            editorType: 'dxSelectBox',
+                            editorOptions: {
+                                dataSource: customerList,
+                                displayExpr: "name",
+                                valueExpr: "$id",
+                                searchExpr: ["name", "phone", "HHID"],
+                                itemTemplate: function (itemData, itemIndex, itemElement) {
+                                    var rightBlock = $("<div style='display:inline-block;'>");
+                                    rightBlock.append("<p style='font-size:larger;'><b>" + itemData.name + "</b></p>");
+                                    rightBlock.append("<p>Phone: <span>" + itemData.phone + "</span></p>");
+                                    rightBlock.append("<p>HopHead ID: <span>" + itemData.HHID + "</span></p>");
+                                    itemElement.append(rightBlock);
+                                }, onSelectionChanged: function (customer) {
+                                    if (customer.selectedItem && customer.selectedItem.$id) {
+                                        formInstance.getEditor('offers').option('items', '');
+                                        var ref = rootRef.child('tenant-record-offers').child(tenantId).orderByChild('deactivated').equalTo(null);
+                                        firebaseUtils.fetchList(ref).then(function (data) {
+                                            var selectedList = [];
+                                            for (var item = 0; item < data.length; item++) {
+                                                if (data[item].customers && (!data[item].customers.hasOwnProperty(customer.selectedItem.$id) || data[item].customers[customer.selectedItem.$id] === false)) {
+                                                    if(!data[item].expiryDate || (data[item].expiryDate && (new Date(data[item].expiryDate) > new Date()))) {
+                                                        selectedList.push(data[item]);
+                                                    }
+                                                } else if (!data[item].customers) {
+                                                    if(!data[item].expiryDate || (data[item].expiryDate && (new Date(data[item].expiryDate) > new Date()))) {
+                                                        selectedList.push(data[item]);
+                                                    }
+                                                }
+                                            }
+                                            formInstance.getEditor('offers').option('items', selectedList);
+                                        });
+                                    }
+                                }
+                            },
+                            validationRules: [{
+                                type: 'required',
+                                message: 'Please select a customer'
+                            }]
+                        }, 'amountOnBeer', 'amountOnLiquor', 'amountOnFood'
+                    ]
+                },
+                {
+                    itemType: "group",
+                    caption: "Redeem Offers",
+                    colSpan: 2,
+                    colCount: 2,
+                    items: [{
+                        dataField: 'offers',
+                        label: {
+                            text: 'Select Offers'
+                        },
+                        name: 'offers',
+                        editorOptions: {
+                            displayExpr: "description",
+                            valueExpr: "$id",
+                            noDataText: 'No offers available',
+                            showSelectionControls: true,
+                            applyValueMode: "useButtons"
+                        },
+                        editorType: 'dxTagBox'
+                    }]
+                }]
+            };
+            return recordForm;
+        }
+        /**
+         * Grid Options for record list
+         * @param {Object} dataSource 
+         */
+        function gridOptions(dataSource, customers, beers) {
+            var gridOptions = dxUtils.createGrid(),
+                otherConfig = {
+                    dataSource: {
+                        load: function () {
+                            var defer = $q.defer();
+                            fetchRecordList().then(function (data) {
+                                defer.resolve(data);
+                            });
+                            return defer.promise;
+                        },
+                        insert: function (recordObj) {
+                            var data = formInstance.option('formData');
+                            if (data.offers) {
+                                recordObj.offers = data.offers;
+                            }
+                            saveRecord(recordObj);
+                        },
+                        update: function (key, recordObj) {
+                            var data = formInstance.option('formData');
+                            if (data.offers) {
+                                recordObj.offers = data.offers;
+                            }
+                            updateRecord(key, recordObj);
+                        },
+                        remove: function (key) {
+                            deleteRecord(key);
+                        }
+                    },
+                    summary: {
+                        totalItems: [{
+                            column: 'amountOnLiquor',
+                            summaryType: 'sum'
+                        }, {
+                            column: 'amountOnBeer',
+                            summaryType: 'sum'
+                        }, {
+                            column: 'amountOnFood',
+                            summaryType: 'sum'
+                        }, {
+                            column: 'total',
+                            summaryType: 'sum',
+                            customizeText: function (data) {
+                                return 'Total ' + data.value;
+                            }
+                        }]
+                    },
+                    editing: {
+                        allowAdding: true,
+                        allowUpdating: false,
+                        allowDeleting: true,
+                        mode: 'form',
+                        form: recordForm(customers, beers)
+                    },
+                    columns: config.recordGridCols(tenantId, customers, beers),
+                    export: {
+                        enabled: true,
+                        fileName: 'Records',
+                        allowExportSelectedData: true
+                    }
+
+                };
+
+            angular.extend(gridOptions, otherConfig);
+            return gridOptions;
+        };
+
+        /**
+         * Save form data
+         * @returns {Object} Record Form data
+         */
+        function saveRecord(recordObj) {
+            var ref = rootRef.child('tenant-records').child(tenantId);
+            if (!recordObj.date) {
+                recordObj.date = new Date();
+            }
+            recordObj.date = recordObj.date.toString();
+            recordObj.user = auth.$getAuth().uid;
+            firebaseUtils.addData(ref, recordObj).then(function (key) {
+                var mergeObj = {};
+                mergeObj['tenant-customer-records/' + tenantId + '/' + recordObj.customerSelected + '/records/' + key] = recordObj;
+                if (recordObj.offers) {
+                    mergeObj['tenant-customer-records/' + tenantId + '/' + recordObj.customerSelected + '/offers/' + key] = recordObj.offers;
+                }
+                firebaseUtils.updateData(rootRef, mergeObj).then(function (data) {
+                    if (!recordObj.offers) {
+                        return;
+                    }
+                    var ref = rootRef.child('tenant-record-offers').child(tenantId).orderByChild('deactivated').equalTo(null);
+                    firebaseUtils.fetchList(ref).then(function (offers) {
+                        var mergeObj = {};
+                        for (var i = 0; i < recordObj.offers.length; i++) {
+                            if (config.getIndexByArray(offers, '$id', recordObj.offers[i]) > -1) {
+                                mergeObj['tenant-record-offers/' + tenantId + '/' + recordObj.offers[i] + '/customers/' + recordObj.customerSelected] = true;
+                            }
+                        }
+                        firebaseUtils.updateData(rootRef, mergeObj).then(function (data) {
+                            var ref = rootRef.child('tenant-redeems').child(tenantId);
+                            for (var i = 0; i < recordObj.offers.length; i++) {
+                                var redeemObj = {
+                                    customerSelected: recordObj.customerSelected,
+                                    offerId: recordObj.offers[i],
+                                    invoice: recordObj.invoice,
+                                    key: key,
+                                    date: recordObj.date
+                                };
+                                
+                                firebaseUtils.addData(ref, redeemObj);
+                            }
+                        });
+                    });
+                });
+            });
+        }
+
+        /**
+         * Fetch record list
+         * @returns {Object} Record data
+         */
+        function fetchRecordList() {
+            var ref = rootRef.child('tenant-records').child(tenantId).orderByChild('deactivated').equalTo(null);
+            return firebaseUtils.fetchList(ref);
+        }
+
+        /**
+         * Fetch record list
+         * @returns {Object} Record data
+         */
+        function updateRecord(key, recordData) {
+            var ref = rootRef.child('tenant-records').child(tenantId).child(key['$id']);
+            firebaseUtils.updateData(ref, recordData).then(function (key) {
+                var mergeObj = {};
+                mergeObj['tenant-customer-records/' + tenantId + '/' + key.customerSelected + '/records/' + key['$id']] = recordData;
+                firebaseUtils.updateData(rootRef, mergeObj);
+            });;
+        }
+
+        /**
+         * Delete Record
+         * @returns {Object} record data
+         */
+        function deleteRecord(key) {
+            var mergeObj = {};
+            mergeObj['tenant-records/' + tenantId + '/' + key['$id'] + '/deactivated'] = false;
+            mergeObj['tenant-customer-records/' + tenantId + '/' + key.customerSelected + '/records/' + key['$id'] + '/deactivated'] = false;
+            //mergeObj['tenant-bulkbuy-records-deactivated/'+ tenantId + '/' + key['$id']] = key;
+            mergeObj['tenant-customer-records/' + tenantId + '/' + key.customerSelected + '/offers/' + key['$id'] + '/deactivated'] = false;
+            firebaseUtils.updateData(rootRef, mergeObj).then(function (records) {
+                var mergeObj = {};
+                if (key.offers) {
+                    var ref = rootRef.child('tenant-record-offers').child(tenantId).orderByChild('deactivated').equalTo(null);
+                    firebaseUtils.fetchList(ref).then(function (offers) {
+                        var mergeObj = {};
+                        for (var i = 0; i < key.offers.length; i++) {
+                            if (config.getIndexByArray(offers, '$id', key.offers[i]) > -1) {
+                                mergeObj['tenant-record-offers/' + tenantId + '/' + key.offers[i] + '/customers/' + key.customerSelected] = false;
+                            }
+                        }
+                        firebaseUtils.updateData(rootRef, mergeObj).then(function() {
+                            var ref = rootRef.child('tenant-redeems').child(tenantId).orderByChild('key').equalTo(key['$id']);
+                            firebaseUtils.fetchList(ref).then(function (data) {                                
+                                var mergeObj = {};
+                                for(var i = 0; i<data.length; i++) {
+                                    mergeObj['tenant-redeems/' + tenantId + '/' + data[i]['$id'] + '/deactivated'] = false;
+                                }                                
+                                firebaseUtils.updateData(rootRef, mergeObj);
+                            });  
+                        });
+                    });
+                }
+            });
+        }
+
+    }
+}());
+(function () {
+    'use strict';
+
+    bulkbuyService.$inject = ["$rootScope", "$firebaseArray", "$firebaseObject", "$q", "authService", "auth", "firebaseUtils", "dxUtils", "config"];
+    angular
+        .module('app.bulkbuys')
+        .factory('bulkbuyService', bulkbuyService);
+
+    /** @ngInject */
+    function bulkbuyService($rootScope, $firebaseArray, $firebaseObject, $q, authService, auth, firebaseUtils, dxUtils, config) {
+        var tenantId = authService.getCurrentTenant(),
+            quantityList = [{
+                id: 0,
+                quantity: 6
+            }, {
+                id: 1,
+                quantity: 10
+            }, {
+                id: 2,
+                quantity: 20
+            }];
+        // Private variables
+
+        var service = {
+            saveBulkbuy: saveBulkbuy,
+            updateBulkbuy: updateBulkbuy,
+            fetchBulkbuyList: fetchBulkbuyList,
+            deleteBulkbuy: deleteBulkbuy
+        };
+
+        return service;
+        /**
+         * Save form data
+         * @returns {Object} Bulkbuy Form data
+         */
+        function saveBulkbuy(bulkbuyObj) {
+            var ref = rootRef.child('tenant-bulkbuys').child(tenantId);
+            if (!bulkbuyObj.date) {
+                bulkbuyObj.date = new Date();
+            }
+            bulkbuyObj.date = bulkbuyObj.date.toString();
+            bulkbuyObj.expiryDate = new Date(new Date(bulkbuyObj.date).getTime() + 60 * 24 * 60 * 60 * 1000).toString();
+            bulkbuyObj.balancedQuantity = quantityList[bulkbuyObj.quantity].quantity;
+            return firebaseUtils.addData(ref, bulkbuyObj).then(function (key) {
+                var mergeObj = {};
+                mergeObj['tenant-customer-bulkbuy-records/' + tenantId + '/' + bulkbuyObj.customerSelected + '/records/' + key] = bulkbuyObj;
+                firebaseUtils.updateData(rootRef, mergeObj).then(function (key) {
+                    var ref = rootRef.child('tenant-customer-bulkbuy-records').child(tenantId).child(bulkbuyObj.customerSelected).child('records').orderByChild('deactivated').equalTo(null);
+                    firebaseUtils.getListSum(ref, 'balancedQuantity').then(function (data) {
+                        var mergeObj = {};
+                        mergeObj['tenant-customer-bulkbuy-records/' + tenantId + '/' + bulkbuyObj.customerSelected + '/balancedQuantity'] = data;
+                        firebaseUtils.updateData(rootRef, mergeObj);
+                    });
+                });
+            });
+            //updateKegQuantity();
+        }
+
+        function updateKegQuantity() {
+            fetchBulkbuyList().then(function (data) {
+                data.forEach(function (bulkbuy) {
+                    var ref = rootRef.child('tenant-kegs').child(tenantId).orderByChild('beerSelected').equalTo(bulkbuy.beerSelected);
+                    firebaseUtils.fetchList(ref).then(function (data) {
+                        updateDb(data, quantityList[bulkbuy.quantity].quantity);
+                    });
+                });
+            });
+
+        }
+
+
+        function hasMin(data, attrib) {
+            return data.reduce(function (prev, curr) {
+                return prev[attrib] < curr[attrib] ? prev : curr;
+            });
+        }
+        function updateDb(data, quantity) {
+            var smallestBrew = hasMin(data, 'LtrsBalanced');
+            var ref = rootRef.child('tenant-kegs').child(tenantId).child(smallestBrew['$id']);
+            if (smallestBrew.LtrsBalanced < quantity) {
+                firebaseUtils.updateData(ref, { 'LtrsBalanced': 0 });
+                var index = getIndexByArray(data, 'LtrsBalanced', smallestBrew.LtrsBalanced);
+                data.splice(index, 1);
+                updateDb(data, quantity - smallestBrew.LtrsBalanced);
+            } else {
+                var balance = smallestBrew.LtrsBalanced - quantity;
+                firebaseUtils.updateData(ref, { 'LtrsBalanced': balance });
+            }
+
+        }
+
+        function getIndexByArray(data, key, value) {
+            for (var i = 0; i < data.length; i++) {
+                if (data[i][key] == value) {
+                    return i;
+                }
+            }
+            return -1;
+        }
+
+        /**
+         * Fetch bulkbuy list
+         * @returns {Object} Bulkbuy data
+         */
+        function fetchBulkbuyList() {
+            var ref = rootRef.child('tenant-bulkbuys').child(tenantId).orderByChild('deactivated').equalTo(null);
+            return firebaseUtils.fetchList(ref);
+        }
+
+        /**
+         * Fetch bulkbuy list
+         * @returns {Object} Bulkbuy data
+         */
+        function updateBulkbuy(key, bulkbuyData) {
+            var mergeObj = {};
+            mergeObj['tenant-bulkbuys/' + tenantId + '/' + key['$id']] = bulkbuyData;
+            mergeObj['tenant-customer-bulkbuy-records/' + tenantId + '/' + bulkbuyData.customerSelected + '/records/' + key['$id']] = bulkbuyData;
+            firebaseUtils.updateData(rootRef, mergeObj).then(function (key) {
+                var ref = rootRef.child('tenant-customer-bulkbuy-records').child(tenantId).child(bulkbuyData.customerSelected).child('records').orderByChild('deactivated').equalTo(null);
+                firebaseUtils.getListSum(ref, 'balancedQuantity').then(function (data) {
+                    var mergeObj = {};
+                    mergeObj['tenant-customer-bulkbuy-records/' + tenantId + '/' + bulkbuyData.customerSelected + '/balancedQuantity'] = data;
+                    firebaseUtils.updateData(rootRef, mergeObj);
+                });
+            });
+            //updateKegQuantity();
+        }
+
+        /**
+         * Delete Bulkbuy
+         * @returns {Object} bulkbuy data
+         */
+        function deleteBulkbuy(key) {
+            var mergeObj = {};
+            mergeObj['tenant-bulkbuys/' + tenantId + '/' + key['$id'] + '/deactivated'] = false;
+            mergeObj['tenant-customer-bulkbuy-records/' + tenantId + '/' + key.customerSelected + '/records/' + key['$id'] + '/deactivated'] = false;
+            //mergeObj['tenant-bulkbuy-records-deactivated/'+ tenantId + '/' + key['$id']] = key;
+            firebaseUtils.updateData(rootRef, mergeObj).then(function () {
+                var ref = rootRef.child('tenant-customer-bulkbuy-records').child(tenantId).child(key.customerSelected).child('records').orderByChild('deactivated').equalTo(null);
+                firebaseUtils.getListSum(ref, 'balancedQuantity').then(function (data) {
+                    var mergeObj = {};
+                    mergeObj['tenant-customer-bulkbuy-records/' + tenantId + '/' + key.customerSelected + '/balancedQuantity'] = data;
+                    firebaseUtils.updateData(rootRef, mergeObj);
+                });
+            });
+            //updateKegQuantity();
+        }
+
+    }
+}());
+(function () {
+    'use strict';
+
+    bookingService.$inject = ["$firebaseArray", "$firebaseObject", "$q", "authService", "auth", "firebaseUtils", "dxUtils", "config"];
+    angular
+        .module('app.bookings')
+        .factory('bookingService', bookingService);
+
+    /** @ngInject */
+    function bookingService($firebaseArray, $firebaseObject, $q, authService, auth, firebaseUtils, dxUtils, config) {
+        var tenantId = authService.getCurrentTenant(),
+            formInstance,
+            customerList,
+            statusList,
+            chargesList,
+            formData;
+        // Private variables
+
+        var service = {
+            gridOptions: gridOptions,
+            saveBooking: saveBooking,
+            updateBooking: updateBooking,
+            fetchBookingList: fetchBookingList,
+            bookingForm: bookingForm
+        };
+
+        var quantityList = [{
+                            id: 0,
+                            quantity: 3
+                        }, {
+                            id: 1,
+                            quantity: 5
+                        }, {
+                            id: 2,
+                            quantity: 10
+                        }, {
+                            id: 3,
+                            quantity: 15
+                        }];
+        return service;
+
+        //////////
+
+        function bookingForm(customerList, beerList) {
+            var bookingForm = {
+                colCount: 2,
+                onInitialized: function (e) {
+                    formInstance = e.component;
+                },
+                items: [{
+                    dataField: 'date',
+                    label:{
+                        text: 'Date'
+                    }, 
+                    editorType: 'dxDateBox',
+                    editorOptions: {
+                    },
+                    validationRules: [{
+                        type: 'required',
+                        message: 'Date is required'
+                    }]
+                }, {
+                    dataField: 'beerSelected',
+                    label: { 
+                        text: 'Brew'
+                    },
+                    editorType: 'dxSelectBox',
+                    editorOptions: {
+                        dataSource: beerList,
+                        displayExpr: "name",
+                        valueExpr: "$id"
+                    },
+                    validationRules: [{
+                        type: 'required',
+                        message: 'Please select a brew'
+                    }]
+                }, {
+                    dataField: 'customerSelected',
+                    label: {
+                        text: 'Customer'
+                    },
+                    editorType: 'dxSelectBox',
+                    editorOptions: {
+                        dataSource: customerList,
+                        displayExpr: "name",
+                        valueExpr: "$id",
+                        searchExpr: ["name", "phone", "HHID"],
+                        itemTemplate: function(itemData, itemIndex, itemElement) {
+                            var rightBlock = $("<div style='display:inline-block;'>");
+                            rightBlock.append("<p style='font-size:larger;'><b>" + itemData.name + "</b></p>");
+                            rightBlock.append("<p>Phone: <span>" + itemData.phone + "</span></p>");
+                            rightBlock.append("<p>HopHead ID: <span>" + itemData.HHID + "</span></p>");
+                            itemElement.append(rightBlock);
+                        }
+                    },
+                    validationRules: [{
+                        type: 'required',
+                        message: 'Please select a customer'
+                    }]
+                }, {
+                    dataField: "quantity",
+                    label: {
+                        text: "quantity (Ltrs)"
+                    },
+                    editorType: 'dxSelectBox',
+                    editorOptions: {
+                        dataSource: quantityList,
+                        displayExpr: "quantity",
+                        valueExpr: "id"
+                    },
+                    validationRules: [{
+                        type: 'required',
+                        message: 'Please select a quantity'
+                    }]
+                }]
+            };
+            return bookingForm;
+        }
+        /**
+         * Grid Options for booking list
+         * @param {Object} dataSource 
+         */
+        function gridOptions(dataSource, customers, beers) {
+            var gridOptions = dxUtils.createGrid(),
+                otherConfig = {
+                    dataSource: {
+                        load: function () {
+                            var defer = $q.defer();
+                            fetchBookingList().then(function (data) {
+                                defer.resolve(data);
+                            });
+                            return defer.promise;
+                        },
+                        insert: function (bookingObj) {
+                            var data = formInstance.option('formData');
+                            saveBooking(bookingObj);
+                        },
+                        update: function (key, bookingObj) {
+                            updateBooking(key, bookingObj);
+                        },
+                        remove: function (key) {
+                            deleteBooking(key);
+                        }
+                    },
+                    summary: {
+                        totalItems: [{
+                            column: 'name',
+                            summaryType: 'count'
+                        }]
+                    },
+                    editing: {
+                        allowAdding: true,
+                        allowUpdating: true,
+                        allowDeleting: true,
+                        mode: 'form',
+                        form: bookingForm(customers, beers)
+                    },
+                    columns: config.bookingGridCols(tenantId, customers, beers),
+                    export: {
+                        enabled: true,
+                        fileName: 'Bookings',
+                        allowExportSelectedData: true
+                    }
+
+                };
+
+            angular.extend(gridOptions, otherConfig);
+            return gridOptions;
+        };
+
+        /**
+         * Save form data
+         * @returns {Object} Booking Form data
+         */
+        function saveBooking(bookingObj) {
+            var ref = rootRef.child('tenant-bookings').child(tenantId);
+            bookingObj.date = bookingObj.date.toString();
+            bookingObj.user = auth.$getAuth().uid;
+            firebaseUtils.addData(ref, bookingObj);
+            updateKegQuantity();
+        }
+
+        function updateKegQuantity() {
+            fetchBookingList().then(function(data){
+                data.forEach(function(booking){
+                    var ref = rootRef.child('tenant-kegs').child(tenantId).orderByChild('beerSelected').equalTo(booking.beerSelected);
+                    firebaseUtils.fetchList(ref).then(function(data) {
+                    updateDb(data, quantityList[booking.quantity].quantity);
+                    });
+                });
+            });
+            
+        }
+
+        
+        function hasMin(data, attrib) {
+                return data.reduce(function(prev, curr){ 
+                    return prev[attrib] < curr[attrib] ? prev : curr; 
+                });
+            }
+        function updateDb(data, quantity) {
+            var smallestBrew = hasMin(data,'LtrsBalanced');  
+            var ref = rootRef.child('tenant-kegs').child(tenantId).child(smallestBrew['$id']);
+            if(smallestBrew.LtrsBalanced < quantity) {
+                firebaseUtils.updateData(ref, {'LtrsBalanced': 0});
+                var index = getIndexByArray(data, 'LtrsBalanced', smallestBrew.LtrsBalanced);
+                data.splice(index,1);
+                updateDb(data, quantity - smallestBrew.LtrsBalanced);
+            } else {
+                var balance = smallestBrew.LtrsBalanced - quantity;
+                firebaseUtils.updateData(ref, {'LtrsBalanced': balance });
+            }            
+            
+        }
+
+        function getIndexByArray(data, key, value) {
+            for(var i = 0; i< data.length; i++) {
+                if(data[i][key] == value) {
+                    return i;
+                }
+            }
+            return -1;
+        }
+        
+        /**
+         * Fetch booking list
+         * @returns {Object} Booking data
+         */
+        function fetchBookingList() {
+            var ref = rootRef.child('tenant-bookings').child(tenantId).orderByChild('deactivated').equalTo(null);
+            return firebaseUtils.fetchList(ref);
+        }
+
+        /**
+         * Fetch booking list
+         * @returns {Object} Booking data
+         */
+        function updateBooking(key, bookingData) {
+            var ref = rootRef.child('tenant-bookings').child(tenantId).child(key['$id']);
+            firebaseUtils.updateData(ref, bookingData);
+            updateKegQuantity();
+        }
+
+        /**
+         * Delete Booking
+         * @returns {Object} booking data
+         */
+        function deleteBooking(key) {
+            var ref = rootRef.child('tenant-bookings').child(tenantId).child(key['$id']);
+            firebaseUtils.updateData(ref, { deactivated: false });
+            updateKegQuantity();
+        }
+
+    }
+}());
 (function ()
 {
     'use strict';
@@ -5845,6 +5891,125 @@
         }
 
  
+    }
+
+})();
+(function ()
+{
+    'use strict';
+
+    config.$inject = ["msNavigationServiceProvider"];
+    angular
+        .module('app.admin', [
+            'app.admin.customers',
+            //'app.admin.beers',
+            //'app.admin.kegs'
+        ])
+        .config(config);
+
+    /** @ngInject */
+    function config(msNavigationServiceProvider)
+    {
+        // Navigation
+        // msNavigationServiceProvider.saveItem('admin', {
+        //     title : 'Admin',
+        //     group : true,
+        //     weight: 2
+        // });
+
+    }
+})();
+(function() {
+    'use strict';
+
+    adminService.$inject = ["$firebaseArray", "$firebaseObject", "auth", "$q", "$timeout", "authService", "firebaseUtils"];
+    angular
+        .module('app.admin')
+        .factory('adminService', adminService);
+
+    /** @ngInject */
+    function adminService($firebaseArray, $firebaseObject, auth, $q, $timeout, authService, firebaseUtils) {
+        var currentUser,
+            tenantId = authService.getCurrentTenant(),
+            service = {
+                setCurrentSettings: setCurrentSettings,
+                getCurrentSettings: getCurrentSettings,
+                getCurrentCustomers: getCurrentCustomers,
+                getBeers: getBeers,
+                getCurrentBulkCustomers: getCurrentBulkCustomers,
+                getCurrentOffers: getCurrentOffers
+            };
+
+        return service;
+
+        //////////
+        /**
+         * Set Current User
+         * @param {Object} User information object
+         */
+        function setCurrentSettings(data) {
+            localStorage.setItem('userObj', JSON.stringify(data));
+        }
+
+        /**
+         * Get Current Settings
+         * @param {String} Current Tenant Id
+         */
+        function getCurrentSettings() {
+            var def = $q.defer(),
+                ref = rootRef.child('settings'),
+                obj = $firebaseObject(ref);
+
+            obj.$loaded().then(function(data) {
+                def.resolve(data);
+            }).catch(function(err) {
+                def.reject(err);
+            });
+
+            return def.promise;
+        }
+
+        /**
+         * get Current Customers
+         */
+        function getCurrentCustomers() {
+            var defer = $q.defer(),
+                ref = rootRef.child('tenant-customers').child(tenantId).orderByChild('deactivated').equalTo(null);
+            firebaseUtils.fetchList(ref).then(function (data) {
+                defer.resolve(data);
+            });
+            return defer.promise;
+        }
+
+        /**
+         * Get current brews
+         */
+        function getBeers() {
+             var defer = $q.defer(),
+                ref = rootRef.child('tenant-beers').child(tenantId).orderByChild('deactivated').equalTo(null);
+            firebaseUtils.fetchList(ref).then(function (data) {
+                defer.resolve(data);
+            });
+            return defer.promise;
+        }
+
+        function getCurrentBulkCustomers() {
+            var defer = $q.defer(),
+                ref = rootRef.child('tenant-bulkbuy-customers').child(tenantId).orderByChild('deactivated').equalTo(null);
+            firebaseUtils.fetchList(ref).then(function (data) {
+                defer.resolve(data);
+            });
+            return defer.promise;
+        }
+
+        function getCurrentOffers() {
+            var defer = $q.defer(),
+                ref = rootRef.child('tenant-record-offers').child(tenantId);
+            firebaseUtils.fetchList(ref).then(function (data) {
+                defer.resolve(data);
+            });
+            return defer.promise;
+        }
     }
 
 })();
@@ -6540,115 +6705,6 @@
 
         //////////
     }
-})();
-(function ()
-{
-    'use strict';
-
-    config.$inject = ["msNavigationServiceProvider"];
-    angular
-        .module('app.admin', [
-            'app.admin.customers',
-            //'app.admin.beers',
-            //'app.admin.kegs'
-        ])
-        .config(config);
-
-    /** @ngInject */
-    function config(msNavigationServiceProvider)
-    {
-        // Navigation
-        // msNavigationServiceProvider.saveItem('admin', {
-        //     title : 'Admin',
-        //     group : true,
-        //     weight: 2
-        // });
-
-    }
-})();
-(function() {
-    'use strict';
-
-    adminService.$inject = ["$firebaseArray", "$firebaseObject", "auth", "$q", "$timeout", "authService", "firebaseUtils"];
-    angular
-        .module('app.admin')
-        .factory('adminService', adminService);
-
-    /** @ngInject */
-    function adminService($firebaseArray, $firebaseObject, auth, $q, $timeout, authService, firebaseUtils) {
-        var currentUser,
-            tenantId = authService.getCurrentTenant(),
-            service = {
-                setCurrentSettings: setCurrentSettings,
-                getCurrentSettings: getCurrentSettings,
-                getCurrentCustomers: getCurrentCustomers,
-                getBeers: getBeers,
-                getCurrentBulkCustomers: getCurrentBulkCustomers
-            };
-
-        return service;
-
-        //////////
-        /**
-         * Set Current User
-         * @param {Object} User information object
-         */
-        function setCurrentSettings(data) {
-            localStorage.setItem('userObj', JSON.stringify(data));
-        }
-
-        /**
-         * Get Current Settings
-         * @param {String} Current Tenant Id
-         */
-        function getCurrentSettings() {
-            var def = $q.defer(),
-                ref = rootRef.child('settings'),
-                obj = $firebaseObject(ref);
-
-            obj.$loaded().then(function(data) {
-                def.resolve(data);
-            }).catch(function(err) {
-                def.reject(err);
-            });
-
-            return def.promise;
-        }
-
-        /**
-         * get Current Customers
-         */
-        function getCurrentCustomers() {
-            var defer = $q.defer(),
-                ref = rootRef.child('tenant-customers').child(tenantId).orderByChild('deactivated').equalTo(null);
-            firebaseUtils.fetchList(ref).then(function (data) {
-                defer.resolve(data);
-            });
-            return defer.promise;
-        }
-
-        /**
-         * Get current brews
-         */
-        function getBeers() {
-             var defer = $q.defer(),
-                ref = rootRef.child('tenant-beers').child(tenantId).orderByChild('deactivated').equalTo(null);
-            firebaseUtils.fetchList(ref).then(function (data) {
-                defer.resolve(data);
-            });
-            return defer.promise;
-        }
-
-        function getCurrentBulkCustomers() {
-            var defer = $q.defer(),
-                ref = rootRef.child('tenant-bulkbuy-customers').child(tenantId).orderByChild('deactivated').equalTo(null);
-            firebaseUtils.fetchList(ref).then(function (data) {
-                defer.resolve(data);
-            });
-            return defer.promise;
-        }
-    }
-
 })();
 (function ()
 {
@@ -7914,19 +7970,7 @@
             // for the demo purposes...
             if ( angular.isUndefined(shortcuts) )
             {
-                shortcuts = [
-                    {
-                        'title'      : 'Sample',
-                        'icon'       : 'icon-tile-four',
-                        'state'      : 'app.sample',
-                        'weight'     : 1,
-                        'children'   : [],
-                        '_id'        : 'sample',
-                        '_path'      : 'apps.sample',
-                        'uisref'     : 'app.sample',
-                        'hasShortcut': true
-                    }
-                ];
+                shortcuts = [];
 
                 $cookies.put('FUSE.shortcuts', angular.toJson(shortcuts));
             }
@@ -11006,203 +11050,6 @@
 {
     'use strict';
 
-    msMaterialColorPickerController.$inject = ["$scope", "$mdColorPalette", "$mdMenu", "fuseGenerator"];
-    angular
-        .module('app.core')
-        .controller('msMaterialColorPickerController', msMaterialColorPickerController)
-        .directive('msMaterialColorPicker', msMaterialColorPicker);
-
-    /** @ngInject */
-    function msMaterialColorPickerController($scope, $mdColorPalette, $mdMenu, fuseGenerator)
-    {
-        var vm = this;
-        vm.palettes = $mdColorPalette; // Material Color Palette
-        vm.selectedPalette = false;
-        vm.selectedHues = false;
-        $scope.$selectedColor = {};
-
-        // Methods
-        vm.activateHueSelection = activateHueSelection;
-        vm.selectColor = selectColor;
-        vm.removeColor = removeColor;
-
-        /**
-         * Initialize / Watch model changes
-         */
-        $scope.$watch('ngModel', setSelectedColor);
-
-        /**
-         * Activate Hue Selection
-         * @param palette
-         * @param hues
-         */
-        function activateHueSelection(palette, hues)
-        {
-            vm.selectedPalette = palette;
-            vm.selectedHues = hues;
-        }
-
-        /**
-         * Select Color
-         * @type {selectColor}
-         */
-        function selectColor(palette, hue)
-        {
-            // Update Selected Color
-            updateSelectedColor(palette, hue);
-
-            // Update Model Value
-            updateModel();
-
-            // Hide The picker
-            $mdMenu.hide();
-        }
-
-        function removeColor()
-        {
-            vm.selectedColor = {
-                palette: '',
-                hue    : '',
-                class  : ''
-            };
-
-            activateHueSelection(false, false);
-
-            updateModel();
-        }
-
-        /**
-         * Set SelectedColor by model type
-         */
-        function setSelectedColor()
-        {
-            if ( !vm.modelCtrl.$viewValue || vm.modelCtrl.$viewValue === '' )
-            {
-                removeColor();
-                return;
-            }
-
-            var palette, hue;
-
-            // If ModelType Class
-            if ( vm.msModelType === 'class' )
-            {
-                var color = vm.modelCtrl.$viewValue.split('-');
-                if ( color.length >= 5 )
-                {
-                    palette = color[1] + '-' + color[2];
-                    hue = color[3];
-                }
-                else
-                {
-                    palette = color[1];
-                    hue = color[2];
-                }
-            }
-
-            // If ModelType Object
-            else if ( vm.msModelType === 'obj' )
-            {
-                palette = vm.modelCtrl.$viewValue.palette;
-                hue = vm.modelCtrl.$viewValue.hue || 500;
-            }
-
-            // Update Selected Color
-            updateSelectedColor(palette, hue);
-        }
-
-        /**
-         * Update Selected Color
-         * @param palette
-         * @param hue
-         */
-        function updateSelectedColor(palette, hue)
-        {
-            vm.selectedColor = {
-                palette     : palette,
-                hue         : hue,
-                class       : 'md-' + palette + '-' + hue + '-bg',
-                bgColorValue: fuseGenerator.rgba(vm.palettes[palette][hue].value),
-                fgColorValue: fuseGenerator.rgba(vm.palettes[palette][hue].contrast)
-            };
-
-            // If Model object not Equals the selectedColor update it
-            // it can be happen when the model only have pallete and hue values
-            if ( vm.msModelType === 'obj' && !angular.equals(vm.selectedColor, vm.modelCtrl.$viewValue) )
-            {
-                // Update Model Value
-                updateModel();
-            }
-
-            activateHueSelection(palette, vm.palettes[palette]);
-
-            $scope.$selectedColor = vm.selectedColor;
-        }
-
-        /**
-         * Update Model Value by model type
-         */
-        function updateModel()
-        {
-            if ( vm.msModelType === 'class' )
-            {
-                vm.modelCtrl.$setViewValue(vm.selectedColor.class);
-            }
-            else if ( vm.msModelType === 'obj' )
-            {
-                vm.modelCtrl.$setViewValue(vm.selectedColor);
-            }
-        }
-    }
-
-    /** @ngInject */
-    function msMaterialColorPicker()
-    {
-        return {
-            require    : ['msMaterialColorPicker', 'ngModel'],
-            restrict   : 'E',
-            scope      : {
-                ngModel    : '=',
-                msModelType: '@?'
-            },
-            controller : 'msMaterialColorPickerController as vm',
-            transclude : true,
-            templateUrl: 'app/core/directives/ms-material-color-picker/ms-material-color-picker.html',
-            link       : function (scope, element, attrs, controllers, transclude)
-            {
-                var ctrl = controllers[0];
-
-                /**
-                 *  Pass model controller to directive controller
-                 */
-                ctrl.modelCtrl = controllers[1];
-
-                /**
-                 * ModelType: 'obj', 'class'(default)
-                 * @type {string|string}
-                 */
-                ctrl.msModelType = scope.msModelType || 'class';
-
-                transclude(scope, function (clone)
-                {
-                    clone = clone.filter(function (i, el)
-                    {
-                        return ( el.nodeType === 1 ) ? true : false;
-                    });
-
-                    if ( clone.length )
-                    {
-                        element.find('ms-color-picker-button').replaceWith(clone);
-                    }
-                });
-            }
-        };
-    }
-})();
-(function ()
-{
-    'use strict';
-
     msMasonryController.$inject = ["$scope", "$window", "$mdMedia", "$timeout"];
     msMasonry.$inject = ["$timeout"];
     angular
@@ -11450,6 +11297,203 @@
                 controller.reLayout();
             });
         }
+    }
+})();
+(function ()
+{
+    'use strict';
+
+    msMaterialColorPickerController.$inject = ["$scope", "$mdColorPalette", "$mdMenu", "fuseGenerator"];
+    angular
+        .module('app.core')
+        .controller('msMaterialColorPickerController', msMaterialColorPickerController)
+        .directive('msMaterialColorPicker', msMaterialColorPicker);
+
+    /** @ngInject */
+    function msMaterialColorPickerController($scope, $mdColorPalette, $mdMenu, fuseGenerator)
+    {
+        var vm = this;
+        vm.palettes = $mdColorPalette; // Material Color Palette
+        vm.selectedPalette = false;
+        vm.selectedHues = false;
+        $scope.$selectedColor = {};
+
+        // Methods
+        vm.activateHueSelection = activateHueSelection;
+        vm.selectColor = selectColor;
+        vm.removeColor = removeColor;
+
+        /**
+         * Initialize / Watch model changes
+         */
+        $scope.$watch('ngModel', setSelectedColor);
+
+        /**
+         * Activate Hue Selection
+         * @param palette
+         * @param hues
+         */
+        function activateHueSelection(palette, hues)
+        {
+            vm.selectedPalette = palette;
+            vm.selectedHues = hues;
+        }
+
+        /**
+         * Select Color
+         * @type {selectColor}
+         */
+        function selectColor(palette, hue)
+        {
+            // Update Selected Color
+            updateSelectedColor(palette, hue);
+
+            // Update Model Value
+            updateModel();
+
+            // Hide The picker
+            $mdMenu.hide();
+        }
+
+        function removeColor()
+        {
+            vm.selectedColor = {
+                palette: '',
+                hue    : '',
+                class  : ''
+            };
+
+            activateHueSelection(false, false);
+
+            updateModel();
+        }
+
+        /**
+         * Set SelectedColor by model type
+         */
+        function setSelectedColor()
+        {
+            if ( !vm.modelCtrl.$viewValue || vm.modelCtrl.$viewValue === '' )
+            {
+                removeColor();
+                return;
+            }
+
+            var palette, hue;
+
+            // If ModelType Class
+            if ( vm.msModelType === 'class' )
+            {
+                var color = vm.modelCtrl.$viewValue.split('-');
+                if ( color.length >= 5 )
+                {
+                    palette = color[1] + '-' + color[2];
+                    hue = color[3];
+                }
+                else
+                {
+                    palette = color[1];
+                    hue = color[2];
+                }
+            }
+
+            // If ModelType Object
+            else if ( vm.msModelType === 'obj' )
+            {
+                palette = vm.modelCtrl.$viewValue.palette;
+                hue = vm.modelCtrl.$viewValue.hue || 500;
+            }
+
+            // Update Selected Color
+            updateSelectedColor(palette, hue);
+        }
+
+        /**
+         * Update Selected Color
+         * @param palette
+         * @param hue
+         */
+        function updateSelectedColor(palette, hue)
+        {
+            vm.selectedColor = {
+                palette     : palette,
+                hue         : hue,
+                class       : 'md-' + palette + '-' + hue + '-bg',
+                bgColorValue: fuseGenerator.rgba(vm.palettes[palette][hue].value),
+                fgColorValue: fuseGenerator.rgba(vm.palettes[palette][hue].contrast)
+            };
+
+            // If Model object not Equals the selectedColor update it
+            // it can be happen when the model only have pallete and hue values
+            if ( vm.msModelType === 'obj' && !angular.equals(vm.selectedColor, vm.modelCtrl.$viewValue) )
+            {
+                // Update Model Value
+                updateModel();
+            }
+
+            activateHueSelection(palette, vm.palettes[palette]);
+
+            $scope.$selectedColor = vm.selectedColor;
+        }
+
+        /**
+         * Update Model Value by model type
+         */
+        function updateModel()
+        {
+            if ( vm.msModelType === 'class' )
+            {
+                vm.modelCtrl.$setViewValue(vm.selectedColor.class);
+            }
+            else if ( vm.msModelType === 'obj' )
+            {
+                vm.modelCtrl.$setViewValue(vm.selectedColor);
+            }
+        }
+    }
+
+    /** @ngInject */
+    function msMaterialColorPicker()
+    {
+        return {
+            require    : ['msMaterialColorPicker', 'ngModel'],
+            restrict   : 'E',
+            scope      : {
+                ngModel    : '=',
+                msModelType: '@?'
+            },
+            controller : 'msMaterialColorPickerController as vm',
+            transclude : true,
+            templateUrl: 'app/core/directives/ms-material-color-picker/ms-material-color-picker.html',
+            link       : function (scope, element, attrs, controllers, transclude)
+            {
+                var ctrl = controllers[0];
+
+                /**
+                 *  Pass model controller to directive controller
+                 */
+                ctrl.modelCtrl = controllers[1];
+
+                /**
+                 * ModelType: 'obj', 'class'(default)
+                 * @type {string|string}
+                 */
+                ctrl.msModelType = scope.msModelType || 'class';
+
+                transclude(scope, function (clone)
+                {
+                    clone = clone.filter(function (i, el)
+                    {
+                        return ( el.nodeType === 1 ) ? true : false;
+                    });
+
+                    if ( clone.length )
+                    {
+                        element.find('ms-color-picker-button').replaceWith(clone);
+                    }
+                });
+            }
+        };
     }
 })();
 (function ()
@@ -13274,7 +13318,7 @@
                     mode: 'virtual'
                 },
                 headerFilter: {
-                    visible: false
+                    visible: true
                 },
                 searchPanel: {
                     visible: true,
@@ -13300,11 +13344,12 @@
                 showColumnLines: false,
                 showRowLines: true,
                 showBorders: false,
-                rowAlternationEnabled: true,
+                rowAlternationEnabled: false,
                 columnAutoWidth: true,
                 sorting: {
-                    mode: 'none'
-                }
+                    mode: 'multiple'
+                },
+                height: 520
             };
             return gridOptions;
 
@@ -13350,7 +13395,7 @@
 
         }
 
-        function offerRedeemGridCols(tenantId, customers) {
+        function offerRedeemGridCols(tenantId, customers, beers, offers) {
             var gridCols = [{
                 dataField: 'date',
                 caption: 'Date',
@@ -13383,6 +13428,17 @@
                     }
                 }
             }, {
+                dataField: 'description',
+                caption: 'Offer',
+                calculateCellValue: function (data) {
+                    var index = getIndexByArray(offers, '$id', data.offerId);
+                    if (index > -1) {
+                        return offers[index].description;
+                    } else {
+                        return '';
+                    }
+                }
+            },{
                 dataField: 'phone',
                 caption: 'Phone',
                 dataType: 'number',
@@ -13734,11 +13790,7 @@
                 dataField: "expiryDate",
                 caption: "Expiry Date",
                 allowEditing: false,
-                dataType: 'date',
-                calculateCellValue: function (data) {
-                    var expiryDate = new Date();
-                    return new Date(new Date(data.date).getTime() + 60 * 24 * 60 * 60 * 1000);
-                }
+                dataType: 'date'
             }];
             return gridCols;
         }
@@ -13791,6 +13843,16 @@
                 dataField: 'invoice',
                 caption: 'Invoice'
             }, {
+                dataField: 'numberOfOffers',
+                caption: 'Redeemed Offers',
+                calculateCellValue: function(data) {
+                    if(data.offers && data.offers.length>0) {
+                        return data.offers.length;
+                    } else {
+                        return 0;
+                    }
+                }
+            },{
                 dataField: 'amountOnBeer',
                 dataType: 'number',
                 caption: 'Amount on Beer',

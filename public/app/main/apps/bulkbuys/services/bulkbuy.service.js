@@ -38,6 +38,7 @@
                 bulkbuyObj.date = new Date();
             }
             bulkbuyObj.date = bulkbuyObj.date.toString();
+            bulkbuyObj.expiryDate = new Date(new Date(bulkbuyObj.date).getTime() + 60 * 24 * 60 * 60 * 1000).toString();
             bulkbuyObj.balancedQuantity = quantityList[bulkbuyObj.quantity].quantity;
             return firebaseUtils.addData(ref, bulkbuyObj).then(function (key) {
                 var mergeObj = {};

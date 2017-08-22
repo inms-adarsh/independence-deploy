@@ -34,7 +34,7 @@
 
         }
 
-        function offerRedeemGridCols(tenantId, customers) {
+        function offerRedeemGridCols(tenantId, customers, beers, offers) {
             var gridCols = [{
                 dataField: 'date',
                 caption: 'Date',
@@ -67,6 +67,17 @@
                     }
                 }
             }, {
+                dataField: 'description',
+                caption: 'Offer',
+                calculateCellValue: function (data) {
+                    var index = getIndexByArray(offers, '$id', data.offerId);
+                    if (index > -1) {
+                        return offers[index].description;
+                    } else {
+                        return '';
+                    }
+                }
+            },{
                 dataField: 'phone',
                 caption: 'Phone',
                 dataType: 'number',
@@ -418,11 +429,7 @@
                 dataField: "expiryDate",
                 caption: "Expiry Date",
                 allowEditing: false,
-                dataType: 'date',
-                calculateCellValue: function (data) {
-                    var expiryDate = new Date();
-                    return new Date(new Date(data.date).getTime() + 60 * 24 * 60 * 60 * 1000);
-                }
+                dataType: 'date'
             }];
             return gridCols;
         }
@@ -475,6 +482,16 @@
                 dataField: 'invoice',
                 caption: 'Invoice'
             }, {
+                dataField: 'numberOfOffers',
+                caption: 'Redeemed Offers',
+                calculateCellValue: function(data) {
+                    if(data.offers && data.offers.length>0) {
+                        return data.offers.length;
+                    } else {
+                        return 0;
+                    }
+                }
+            },{
                 dataField: 'amountOnBeer',
                 dataType: 'number',
                 caption: 'Amount on Beer',

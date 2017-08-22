@@ -54,23 +54,25 @@
         // Translation
         $translatePartialLoaderProvider.addPart('app/main/apps/records');
 
-        // Navigation
-        msNavigationServiceProvider.saveItem('apps', {
-            title : 'Applications',
-            group : true,
-            weight: 1
-        });
+        // // Navigation
+        // msNavigationServiceProvider.saveItem('apps', {
+        //     title : 'Applications',
+        //     group : true,
+        //     weight: 1
+        // });
 
         // Navigation
-        msNavigationServiceProvider.saveItem('apps.hopheads', {
+        msNavigationServiceProvider.saveItem('hopheads', {
             title : 'HopHeads',
             group : true,
             weight: 2
         });
 
-        msNavigationServiceProvider.saveItem('apps.hopheads.records', {
+        msNavigationServiceProvider.saveItem('hopheads.records', {
+            weight: 2,
             title: 'Sales',
-            state: 'app.records.list'
+            state: 'app.records.list',
+            icon: 'icon-sale'
         });
     }
 })();

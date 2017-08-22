@@ -86,11 +86,15 @@
                                         var ref = rootRef.child('tenant-record-offers').child(tenantId).orderByChild('deactivated').equalTo(null);
                                         firebaseUtils.fetchList(ref).then(function (data) {
                                             var selectedList = [];
-                                            for(var item = 0; item< data.length; item++) {
-                                                if(data[item].customers && (!data[item].customers.hasOwnProperty(customer.selectedItem.$id) || data[item].customers[customer.selectedItem.$id] === false)) {
-                                                    selectedList.push(data[item]);
-                                                } else if(!data[item].customers) {
-                                                    selectedList.push(data[item]);
+                                            for (var item = 0; item < data.length; item++) {
+                                                if (data[item].customers && (!data[item].customers.hasOwnProperty(customer.selectedItem.$id) || data[item].customers[customer.selectedItem.$id] === false)) {
+                                                    if(!data[item].expiryDate || (data[item].expiryDate && (new Date(data[item].expiryDate) > new Date()))) {
+                                                        selectedList.push(data[item]);
+                                                    }
+                                                } else if (!data[item].customers) {
+                                                    if(!data[item].expiryDate || (data[item].expiryDate && (new Date(data[item].expiryDate) > new Date()))) {
+                                                        selectedList.push(data[item]);
+                                                    }
                                                 }
                                             }
                                             formInstance.getEditor('offers').option('items', selectedList);
@@ -214,22 +218,35 @@
             firebaseUtils.addData(ref, recordObj).then(function (key) {
                 var mergeObj = {};
                 mergeObj['tenant-customer-records/' + tenantId + '/' + recordObj.customerSelected + '/records/' + key] = recordObj;
-                if(recordObj.offers) {
+                if (recordObj.offers) {
                     mergeObj['tenant-customer-records/' + tenantId + '/' + recordObj.customerSelected + '/offers/' + key] = recordObj.offers;
                 }
-                firebaseUtils.updateData(rootRef, mergeObj).then(function(data) {
-                    if(!recordObj.offers) {
+                firebaseUtils.updateData(rootRef, mergeObj).then(function (data) {
+                    if (!recordObj.offers) {
                         return;
                     }
                     var ref = rootRef.child('tenant-record-offers').child(tenantId).orderByChild('deactivated').equalTo(null);
-                    firebaseUtils.fetchList(ref).then(function(offers) {
+                    firebaseUtils.fetchList(ref).then(function (offers) {
                         var mergeObj = {};
-                        for(var i=0; i< recordObj.offers.length; i++) {
-                            if(config.getIndexByArray(offers, '$id', recordObj.offers[i]) > -1) {
-                                mergeObj['tenant-record-offers/' + tenantId + '/' + recordObj.offers[i] + '/customers/' + recordObj.customerSelected] = recordObj.invoice;
+                        for (var i = 0; i < recordObj.offers.length; i++) {
+                            if (config.getIndexByArray(offers, '$id', recordObj.offers[i]) > -1) {
+                                mergeObj['tenant-record-offers/' + tenantId + '/' + recordObj.offers[i] + '/customers/' + recordObj.customerSelected] = true;
                             }
                         }
-                        return firebaseUtils.updateData(rootRef, mergeObj);
+                        firebaseUtils.updateData(rootRef, mergeObj).then(function (data) {
+                            var ref = rootRef.child('tenant-redeems').child(tenantId);
+                            for (var i = 0; i < recordObj.offers.length; i++) {
+                                var redeemObj = {
+                                    customerSelected: recordObj.customerSelected,
+                                    offerId: recordObj.offers[i],
+                                    invoice: recordObj.invoice,
+                                    key: key,
+                                    date: recordObj.date
+                                };
+                                
+                                firebaseUtils.addData(ref, redeemObj);
+                            }
+                        });
                     });
                 });
             });
@@ -267,18 +284,27 @@
             mergeObj['tenant-customer-records/' + tenantId + '/' + key.customerSelected + '/records/' + key['$id'] + '/deactivated'] = false;
             //mergeObj['tenant-bulkbuy-records-deactivated/'+ tenantId + '/' + key['$id']] = key;
             mergeObj['tenant-customer-records/' + tenantId + '/' + key.customerSelected + '/offers/' + key['$id'] + '/deactivated'] = false;
-            firebaseUtils.updateData(rootRef, mergeObj).then(function(records) {
+            firebaseUtils.updateData(rootRef, mergeObj).then(function (records) {
                 var mergeObj = {};
-                if(key.offers) {
+                if (key.offers) {
                     var ref = rootRef.child('tenant-record-offers').child(tenantId).orderByChild('deactivated').equalTo(null);
-                    firebaseUtils.fetchList(ref).then(function(offers) {
+                    firebaseUtils.fetchList(ref).then(function (offers) {
                         var mergeObj = {};
-                        for(var i=0; i< key.offers.length; i++) {
-                            if(config.getIndexByArray(offers, '$id', key.offers[i]) > -1) {
+                        for (var i = 0; i < key.offers.length; i++) {
+                            if (config.getIndexByArray(offers, '$id', key.offers[i]) > -1) {
                                 mergeObj['tenant-record-offers/' + tenantId + '/' + key.offers[i] + '/customers/' + key.customerSelected] = false;
                             }
                         }
-                        return firebaseUtils.updateData(rootRef, mergeObj);
+                        firebaseUtils.updateData(rootRef, mergeObj).then(function() {
+                            var ref = rootRef.child('tenant-redeems').child(tenantId).orderByChild('key').equalTo(key['$id']);
+                            firebaseUtils.fetchList(ref).then(function (data) {                                
+                                var mergeObj = {};
+                                for(var i = 0; i<data.length; i++) {
+                                    mergeObj['tenant-redeems/' + tenantId + '/' + data[i]['$id'] + '/deactivated'] = false;
+                                }                                
+                                firebaseUtils.updateData(rootRef, mergeObj);
+                            });  
+                        });
                     });
                 }
             });

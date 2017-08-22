@@ -14,8 +14,8 @@
 @import "core/theme-options/theme-options.scss";
 @import "core/directives/ms-card/ms-card.scss";
 @import "core/directives/ms-form-wizard/ms-form-wizard.scss";
-@import "core/directives/ms-info-bar/ms-info-bar.scss";
 @import "core/directives/ms-masonry/ms-masonry.scss";
+@import "core/directives/ms-info-bar/ms-info-bar.scss";
 @import "core/directives/ms-material-color-picker/ms-material-color-picker.scss";
 @import "core/directives/ms-nav/ms-nav.scss";
 @import "core/directives/ms-navigation/ms-navigation.scss";
@@ -25,8 +25,8 @@
 @import "core/directives/ms-shortcuts/ms-shortcuts.scss";
 @import "core/directives/ms-splash-screen/ms-splash-screen.scss";
 @import "core/directives/ms-stepper/ms-stepper.scss";
-@import "core/directives/ms-timeline/ms-timeline.scss";
 @import "core/directives/ms-widget/ms-widget.scss";
+@import "core/directives/ms-timeline/ms-timeline.scss";
 @import "core/scss/partials/angular-material-extend.scss";
 @import "core/scss/partials/animations.scss";
 @import "core/scss/partials/colors.scss";
@@ -51,12 +51,12 @@
 @import "core/scss/partials/plugins/nvd3.scss";
 @import "core/scss/partials/plugins/perfect-scrollbar.scss";
 @import "core/scss/partials/plugins/text-angular.scss";
-@import "core/directives/ms-card/templates/template-10/template-10.scss";
 @import "core/directives/ms-card/templates/template-1/template-1.scss";
+@import "core/directives/ms-card/templates/template-10/template-10.scss";
 @import "core/directives/ms-card/templates/template-2/template-2.scss";
 @import "core/directives/ms-card/templates/template-3/template-3.scss";
-@import "core/directives/ms-card/templates/template-4/template-4.scss";
 @import "core/directives/ms-card/templates/template-5/template-5.scss";
+@import "core/directives/ms-card/templates/template-4/template-4.scss";
 @import "core/directives/ms-card/templates/template-6/template-6.scss";
 @import "core/directives/ms-card/templates/template-7/template-7.scss";
 @import "core/directives/ms-card/templates/template-8/template-8.scss";
@@ -86,9 +86,6 @@
 @import "main/apps/records/redeems/views/list-view/sidenavs/main-sidenav.scss";
 @import "quick-panel/quick-panel.scss";
 @import "toolbar/toolbar.scss";
-@import "navigation/layouts/horizontal-navigation/navigation.scss";
-@import "navigation/layouts/vertical-navigation/navigation.scss";
-@import "navigation/layouts/vertical-navigation-fullwidth-toolbar-2/navigation.scss";
 @import "main/admin/beers/beers.scss";
 @import "main/admin/containers/containers.scss";
 @import "main/admin/customers/customers.scss";
@@ -108,6 +105,9 @@
 @import "main/auth/tenant/tenant.scss";
 @import "main/settings/taxes/taxes.scss";
 @import "main/settings/taxgroups/taxgroups.scss";
+@import "navigation/layouts/horizontal-navigation/navigation.scss";
+@import "navigation/layouts/vertical-navigation/navigation.scss";
+@import "navigation/layouts/vertical-navigation-fullwidth-toolbar-2/navigation.scss";
 @import "quick-panel/tabs/activity/activity-tab.scss";
 @import "quick-panel/tabs/chat/chat-tab.scss";
 @import "quick-panel/tabs/today/today-tab.scss";

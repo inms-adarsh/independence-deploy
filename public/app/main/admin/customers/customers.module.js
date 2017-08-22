@@ -56,9 +56,11 @@
 
         // Navigation
 
-        msNavigationServiceProvider.saveItem('apps.hopheads.customers', {
+        msNavigationServiceProvider.saveItem('hopheads.customers', {
             title: 'Registrations',
-            state: 'app.customers.list'
+            state: 'app.customers.list',
+            weight: 1,
+            icon: 'icon-person-plus'
         });
     }
 })();

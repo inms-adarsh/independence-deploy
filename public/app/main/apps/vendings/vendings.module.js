@@ -52,14 +52,14 @@
         // Translation
         $translatePartialLoaderProvider.addPart('app/main/apps/vendings');
 
-        // Navigation
-        msNavigationServiceProvider.saveItem('apps', {
-            title : 'Applications',
-            group : true,
-            weight: 1
-        });
+        // // Navigation
+        // msNavigationServiceProvider.saveItem('apps', {
+        //     title : 'Applications',
+        //     group : true,
+        //     weight: 1
+        // });
 
-        msNavigationServiceProvider.saveItem('apps.vendings', {
+        msNavigationServiceProvider.saveItem('vendings', {
             title: 'Vendings',
             state: 'app.vendings.list'
         });

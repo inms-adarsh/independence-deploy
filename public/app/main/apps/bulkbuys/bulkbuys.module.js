@@ -62,29 +62,31 @@
         // });
 
         // Navigation
-        msNavigationServiceProvider.saveItem('apps.bulkbuys', {
+        msNavigationServiceProvider.saveItem('bulkbuys', {
             title : 'Bulk Buy',
             group : true,
             weight: 2
         });
 
-        msNavigationServiceProvider.saveItem('apps.bulkbuys.customers', {
+        msNavigationServiceProvider.saveItem('bulkbuys.customers', {
             title: 'Registrations',
             state: 'app.bulkbuys.customers.list',
             weight: 0
             
         });
 
-        msNavigationServiceProvider.saveItem('apps.bulkbuys.activation', {
+        msNavigationServiceProvider.saveItem('bulkbuys.activation', {
             title: 'Assign Quantity',
             state: 'app.bulkbuys.list',
-            weight: 1
+            weight: 1,
+            icon: 'icon-plus'
         });
 
-        msNavigationServiceProvider.saveItem('apps.bulkbuys.bookings', {
+        msNavigationServiceProvider.saveItem('bulkbuys.bookings', {
             title: 'Redemption',
             state: 'app.bulkbuys.bookings.list',
-            weight: 2
+            weight: 2,
+            icon: 'icon-beer'
         });
 
     }

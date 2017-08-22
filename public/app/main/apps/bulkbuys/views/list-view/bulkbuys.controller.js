@@ -287,7 +287,7 @@
                     onRowRemoving: function (e) {
                         var d = $.Deferred();
 
-                        if (quantityList[e.data.quantity].quantity > e.data.balancedQuantity) {
+                        if (quantityList[e.data.quantity].quantity > e.data.balancedQuantity || new Date(e.data.expiryDate) < new Date()) {
                             d.reject("Can not delete the record");
                         } else {
                             d.resolve();
@@ -313,6 +313,10 @@
                     },
                     onContentReady: function (e) {
                         dataGridInstance = e.component;
+                    },
+                    onRowPrepared: function (info) {
+                        if (info.rowType == 'data' && new Date(info.data.expiryDate).getTime() < new Date().getTime())
+                            info.rowElement.addClass("md-red-50-bg");
                     }
                 };
 

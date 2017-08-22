@@ -201,19 +201,7 @@
             // for the demo purposes...
             if ( angular.isUndefined(shortcuts) )
             {
-                shortcuts = [
-                    {
-                        'title'      : 'Sample',
-                        'icon'       : 'icon-tile-four',
-                        'state'      : 'app.sample',
-                        'weight'     : 1,
-                        'children'   : [],
-                        '_id'        : 'sample',
-                        '_path'      : 'apps.sample',
-                        'uisref'     : 'app.sample',
-                        'hasShortcut': true
-                    }
-                ];
+                shortcuts = [];
 
                 $cookies.put('FUSE.shortcuts', angular.toJson(shortcuts));
             }

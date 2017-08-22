@@ -56,9 +56,11 @@
 
         // Navigation
 
-        msNavigationServiceProvider.saveItem('apps.hopheads.offers', {
+        msNavigationServiceProvider.saveItem('hopheads.offers', {
             title: 'Offers',
-            state: 'app.records.offers.list'
+            state: 'app.records.offers.list',
+            weight: 3,
+            icon: 'icon-barcode'
         });
     }
 })();

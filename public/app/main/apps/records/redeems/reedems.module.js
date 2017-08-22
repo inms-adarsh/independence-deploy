@@ -44,6 +44,9 @@
                     },
                     beers: function(adminService) {
                         return adminService.getBeers();
+                    },
+                    offers: function(adminService) {
+                        return adminService.getCurrentOffers();
                     }
                 },
                 bodyClass: 'redeems'
@@ -62,9 +65,11 @@
 
         // Navigation
 
-        msNavigationServiceProvider.saveItem('apps.hopheads.redeems', {
+        msNavigationServiceProvider.saveItem('hopheads.redeems', {
             title: 'Offer Redemption History',
-            state: 'app.records.redeems.list'
+            state: 'app.records.redeems.list',
+            weight: 4,
+            icon: 'icon-history'
         });
     }
 })();

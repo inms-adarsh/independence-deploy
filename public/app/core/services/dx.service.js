@@ -29,7 +29,7 @@
                     mode: 'virtual'
                 },
                 headerFilter: {
-                    visible: true
+                    visible: false
                 },
                 searchPanel: {
                     visible: true,
@@ -58,7 +58,7 @@
                 rowAlternationEnabled: false,
                 columnAutoWidth: true,
                 sorting: {
-                    mode: 'multiple'
+                    mode: 'none'
                 },
                 height: 520
             };

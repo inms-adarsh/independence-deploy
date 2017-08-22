@@ -963,574 +963,6 @@
 
     config.$inject = ["$stateProvider", "$translatePartialLoaderProvider", "msApiProvider", "msNavigationServiceProvider"];
     angular
-        .module('app.admin.locations',
-            [
-                // 3rd Party Dependencies
-                'dx'
-            ]
-        )
-        .config(config);
-
-    /** @ngInject */
-    function config($stateProvider, $translatePartialLoaderProvider, msApiProvider, msNavigationServiceProvider)
-    {
-        // State
-        $stateProvider
-            .state('app.locations', {
-                abstract: true,
-                url     : '/locations'
-            })
-            .state('app.locations.list', {
-                url      : '/list',
-                views    : {
-                    'content@app': {
-                        templateUrl: 'app/main/admin/locations/views/list-view/locations.html',
-                        controller : 'LocationsController as vm'
-                    }
-                },
-                 resolve : {
-                    currentAuth: ["auth", function (auth) {
-                        // returns a promisse so the resolve waits for it to complete
-                        return auth.$requireSignIn();
-                    }],
-                    tenantInfo: ["auth", "authService", function(auth, authService){
-                        return authService.retrieveTenant();
-                    }],
-                    settings: ["adminService", function(adminService) {
-                        return adminService.getCurrentSettings();
-                    }]
-                },
-                bodyClass: 'locations'
-            });
-
-        // Translation
-        $translatePartialLoaderProvider.addPart('app/main/admin/locations');
-
-        // Api
-        msApiProvider.register('locations.dashboard', ['app/data/e-commerce/dashboard.json']);
-        msApiProvider.register('locations.products', ['app/data/e-commerce/products.json']);
-        msApiProvider.register('locations.product', ['app/data/e-commerce/product.json']);
-        msApiProvider.register('locations.orders', ['app/data/e-commerce/orders.json']);
-        msApiProvider.register('locations.statuses', ['app/data/e-commerce/statuses.json']);
-        msApiProvider.register('locations.order', ['app/data/e-commerce/order.json']);
-
-        // Navigation
-
-        msNavigationServiceProvider.saveItem('admin.locations', {
-            title: 'Locations',
-            state: 'app.locations.list'
-        });
-    }
-})();
-(function ()
-{
-    'use strict';
-
-    LocationsController.$inject = ["$state", "$scope", "$mdDialog", "$document", "locationService"];
-    angular
-        .module('app.admin.locations')
-        .controller('LocationsController', LocationsController);
-
-    /** @ngInject */
-    function LocationsController($state, $scope, $mdDialog, $document, locationService)
-    {
-        var vm = this;
-
-        // Data
-        
-        // Methods
-        init();
-        //////////
-
-        function init() {
-            vm.locationGridOptions = locationService.gridOptions('vm.locations');
-        }
-
-    }
-})();
-(function ()
-{
-    'use strict';
-
-    config.$inject = ["$stateProvider", "$translatePartialLoaderProvider", "msApiProvider", "msNavigationServiceProvider"];
-    angular
-        .module('app.admin.kegs',
-            [
-                // 3rd Party Dependencies
-                'dx'
-            ]
-        )
-        .config(config);
-
-    /** @ngInject */
-    function config($stateProvider, $translatePartialLoaderProvider, msApiProvider, msNavigationServiceProvider)
-    {
-        // State
-        $stateProvider
-            .state('app.kegs', {
-                abstract: true,
-                url     : '/kegs'
-            })
-            .state('app.kegs.list', {
-                url      : '/list',
-                views    : {
-                    'content@app': {
-                        templateUrl: 'app/main/admin/kegs/views/list-view/kegs.html',
-                        controller : 'KegsController as vm'
-                    }
-                },
-                 resolve : {
-                    currentAuth: ["auth", function (auth) {
-                        // returns a promisse so the resolve waits for it to complete
-                        return auth.$requireSignIn();
-                    }],
-                    tenantInfo: ["auth", "authService", function(auth, authService){
-                        return authService.retrieveTenant();
-                    }],
-                    settings: ["adminService", function(adminService) {
-                        return adminService.getCurrentSettings();
-                    }]
-                },
-                bodyClass: 'kegs'
-            });
-
-        // Translation
-        $translatePartialLoaderProvider.addPart('app/main/admin/kegs');
-
-        // Api
-        msApiProvider.register('kegs.dashboard', ['app/data/e-commerce/dashboard.json']);
-        msApiProvider.register('kegs.products', ['app/data/e-commerce/products.json']);
-        msApiProvider.register('kegs.product', ['app/data/e-commerce/product.json']);
-        msApiProvider.register('kegs.orders', ['app/data/e-commerce/orders.json']);
-        msApiProvider.register('kegs.statuses', ['app/data/e-commerce/statuses.json']);
-        msApiProvider.register('kegs.order', ['app/data/e-commerce/order.json']);
-
-        // Navigation
-
-        msNavigationServiceProvider.saveItem('admin.kegs', {
-            title: 'Kegs',
-            state: 'app.kegs.list'
-        });
-    }
-})();
-(function ()
-{
-    'use strict';
-
-    KegsController.$inject = ["$state", "$scope", "$mdDialog", "$document", "kegService"];
-    angular
-        .module('app.admin.kegs')
-        .controller('KegsController', KegsController);
-
-    /** @ngInject */
-    function KegsController($state, $scope, $mdDialog, $document, kegService)
-    {
-        var vm = this;
-
-        // Data
-        
-        // Methods
-        init();
-        //////////
-
-        function init() {
-            vm.kegGridOptions = kegService.gridOptions('vm.kegs');
-        }
-
-    }
-})();
-(function ()
-{
-    'use strict';
-
-    config.$inject = ["$stateProvider", "$translatePartialLoaderProvider", "msApiProvider", "msNavigationServiceProvider"];
-    angular
-        .module('app.admin.drivers',
-            [
-                // 3rd Party Dependencies
-                'dx'
-            ]
-        )
-        .config(config);
-
-    /** @ngInject */
-    function config($stateProvider, $translatePartialLoaderProvider, msApiProvider, msNavigationServiceProvider)
-    {
-        // State
-        $stateProvider
-            .state('app.drivers', {
-                abstract: true,
-                url     : '/drivers'
-            })
-            .state('app.drivers.list', {
-                url      : '/list',
-                views    : {
-                    'content@app': {
-                        templateUrl: 'app/main/admin/drivers/views/list-view/drivers.html',
-                        controller : 'DriversController as vm'
-                    }
-                },
-                 resolve : {
-                    currentAuth: ["auth", function (auth) {
-                        // returns a promisse so the resolve waits for it to complete
-                        return auth.$requireSignIn();
-                    }],
-                    tenantInfo: ["auth", "authService", function(auth, authService){
-                        return authService.retrieveTenant();
-                    }],
-                    settings: ["adminService", function(adminService) {
-                        return adminService.getCurrentSettings();
-                    }]
-                },
-                bodyClass: 'drivers'
-            });
-
-        // Translation
-        $translatePartialLoaderProvider.addPart('app/main/admin/drivers');
-
-        // Api
-        msApiProvider.register('drivers.dashboard', ['app/data/e-commerce/dashboard.json']);
-        msApiProvider.register('drivers.products', ['app/data/e-commerce/products.json']);
-        msApiProvider.register('drivers.product', ['app/data/e-commerce/product.json']);
-        msApiProvider.register('drivers.orders', ['app/data/e-commerce/orders.json']);
-        msApiProvider.register('drivers.statuses', ['app/data/e-commerce/statuses.json']);
-        msApiProvider.register('drivers.order', ['app/data/e-commerce/order.json']);
-
-        // Navigation
-
-        msNavigationServiceProvider.saveItem('admin.drivers', {
-            title: 'Drivers',
-            state: 'app.drivers.list'
-        });
-    }
-})();
-(function ()
-{
-    'use strict';
-
-    DriversController.$inject = ["$state", "$scope", "$mdDialog", "$document", "driverService"];
-    angular
-        .module('app.admin.drivers')
-        .controller('DriversController', DriversController);
-
-    /** @ngInject */
-    function DriversController($state, $scope, $mdDialog, $document, driverService)
-    {
-        var vm = this;
-
-        // Data
-        
-        // Methods
-        init();
-        //////////
-
-        function init() {
-            vm.driverGridOptions = driverService.gridOptions('vm.drivers');
-        }
-
-    }
-})();
-(function ()
-{
-    'use strict';
-
-    CustomersController.$inject = ["$state", "$scope", "$mdDialog", "$document", "customerService"];
-    angular
-        .module('app.admin.customers')
-        .controller('CustomersController', CustomersController);
-
-    /** @ngInject */
-    function CustomersController($state, $scope, $mdDialog, $document, customerService)
-    {
-        var vm = this;
-
-        // Data
-        
-        // Methods
-        vm.addDialog = addDialog;
-        vm.editDialog = editDialog;
-        init();
-        //////////
-
-        function init() {
-            vm.customerGridOptions = customerService.gridOptions('vm.customers');
-        }
-
-         /**
-         * Add New Row
-         */
-        function addDialog(ev)
-        {
-            $mdDialog.show({
-                controller         : 'CustomerDialogController',
-                controllerAs       : 'vm',
-                templateUrl        : 'app/main/admin/customers/views/dialogs/customer-dialog.html',
-                parent             : angular.element($document.body),
-                targetEvent        : ev,
-                clickOutsideToClose: true,
-                locals             : {
-                    dialogData: {
-                        dialogType: 'add'
-                    }
-                }
-            });
-        }
-
-        /**
-         * Edit Dialog
-         */
-        function editDialog(ev, formView, formData)
-        {
-            $mdDialog.show({
-                controller         : 'CustomerDialogController',
-                controllerAs       : 'vm',
-                templateUrl        : 'app/main/apps/customers/views/dialogs/add-edit/edit-dialog.html',
-                parent             : angular.element($document.body),
-                targetEvent        : ev,
-                clickOutsideToClose: true,
-                locals             : {
-                    dialogData: {
-                        chartData : vm.data,
-                        dialogType: 'edit',
-                        formView  : formView,
-                        formData  : formData
-                    }
-                }
-            });
-        }
-
-    }
-})();
-(function () {
-    'use strict';
-
-    CustomerDialogController.$inject = ["$mdDialog", "dialogData", "customerService"];
-    angular
-        .module('app.admin.customers')
-        .controller('CustomerDialogController', CustomerDialogController);
-
-    /** @ngInject */
-    function CustomerDialogController($mdDialog, dialogData, customerService) {
-        var vm = this,
-            dxFormInstance;
-
-        // Data
-        vm.form = {
-            from: 'johndoe@creapond.com'
-        };
-
-        vm.hiddenCC = true;
-        vm.hiddenBCC = true;
-
-        vm.customers = {};
-
-        vm.formOptions = customerService.formOptions();
-
-        // Methods
-        vm.closeDialog = closeDialog;
-
-        //////////
-
-        function closeDialog() {
-            dxFormInstance = $('#customer-form').dxForm('instance');
-            if(dxFormInstance.validate().isValid === true) {
-                customerService.saveData(dxFormInstance.option('formData')).then(function(data) {
-                    $mdDialog.hide();
-                });
-            }
-            //$mdDialog.hide();
-        }
-    }
-})();
-
-(function ()
-{
-    'use strict';
-
-    config.$inject = ["$stateProvider", "$translatePartialLoaderProvider", "msApiProvider", "msNavigationServiceProvider"];
-    angular
-        .module('app.admin.containers',
-            [
-                // 3rd Party Dependencies
-                'dx'
-            ]
-        )
-        .config(config);
-
-    /** @ngInject */
-    function config($stateProvider, $translatePartialLoaderProvider, msApiProvider, msNavigationServiceProvider)
-    {
-        // State
-        $stateProvider
-            .state('app.containers', {
-                abstract: true,
-                url     : '/containers'
-            })
-            .state('app.containers.list', {
-                url      : '/list',
-                views    : {
-                    'content@app': {
-                        templateUrl: 'app/main/admin/containers/views/list-view/containers.html',
-                        controller : 'ContainersController as vm'
-                    }
-                },
-                 resolve : {
-                    currentAuth: ["auth", function (auth) {
-                        // returns a promisse so the resolve waits for it to complete
-                        return auth.$requireSignIn();
-                    }],
-                    tenantInfo: ["auth", "authService", function(auth, authService){
-                        return authService.retrieveTenant();
-                    }],
-                    settings: ["adminService", function(adminService) {
-                        return adminService.getCurrentSettings();
-                    }]
-                },
-                bodyClass: 'containers'
-            });
-
-        // Translation
-        $translatePartialLoaderProvider.addPart('app/main/admin/containers');
-
-        // Api
-        msApiProvider.register('containers.dashboard', ['app/data/e-commerce/dashboard.json']);
-        msApiProvider.register('containers.products', ['app/data/e-commerce/products.json']);
-        msApiProvider.register('containers.product', ['app/data/e-commerce/product.json']);
-        msApiProvider.register('containers.orders', ['app/data/e-commerce/orders.json']);
-        msApiProvider.register('containers.statuses', ['app/data/e-commerce/statuses.json']);
-        msApiProvider.register('containers.order', ['app/data/e-commerce/order.json']);
-
-        // Navigation
-
-        msNavigationServiceProvider.saveItem('admin.containers', {
-            title: 'Containers',
-            state: 'app.containers.list'
-        });
-    }
-})();
-(function ()
-{
-    'use strict';
-
-    ContainersController.$inject = ["$state", "$scope", "$mdDialog", "$document", "containerService"];
-    angular
-        .module('app.admin.containers')
-        .controller('ContainersController', ContainersController);
-
-    /** @ngInject */
-    function ContainersController($state, $scope, $mdDialog, $document, containerService)
-    {
-        var vm = this;
-
-        // Data
-        
-        // Methods
-        init();
-        //////////
-
-        function init() {
-            vm.containerGridOptions = containerService.gridOptions('vm.containers');
-        }
-
-    }
-})();
-(function ()
-{
-    'use strict';
-
-    config.$inject = ["$stateProvider", "$translatePartialLoaderProvider", "msApiProvider", "msNavigationServiceProvider"];
-    angular
-        .module('app.admin.beers',
-            [
-                // 3rd Party Dependencies
-                'dx'
-            ]
-        )
-        .config(config);
-
-    /** @ngInject */
-    function config($stateProvider, $translatePartialLoaderProvider, msApiProvider, msNavigationServiceProvider)
-    {
-        // State
-        $stateProvider
-            .state('app.beers', {
-                abstract: true,
-                url     : '/beers'
-            })
-            .state('app.beers.list', {
-                url      : '/list',
-                views    : {
-                    'content@app': {
-                        templateUrl: 'app/main/admin/beers/views/list-view/beers.html',
-                        controller : 'BeersController as vm'
-                    }
-                },
-                 resolve : {
-                    currentAuth: ["auth", function (auth) {
-                        // returns a promisse so the resolve waits for it to complete
-                        return auth.$requireSignIn();
-                    }],
-                    tenantInfo: ["auth", "authService", function(auth, authService){
-                        return authService.retrieveTenant();
-                    }],
-                    settings: ["adminService", function(adminService) {
-                        return adminService.getCurrentSettings();
-                    }]
-                },
-                bodyClass: 'beers'
-            });
-
-        // Translation
-        $translatePartialLoaderProvider.addPart('app/main/admin/beers');
-
-        // Api
-        msApiProvider.register('beers.dashboard', ['app/data/e-commerce/dashboard.json']);
-        msApiProvider.register('beers.products', ['app/data/e-commerce/products.json']);
-        msApiProvider.register('beers.product', ['app/data/e-commerce/product.json']);
-        msApiProvider.register('beers.orders', ['app/data/e-commerce/orders.json']);
-        msApiProvider.register('beers.statuses', ['app/data/e-commerce/statuses.json']);
-        msApiProvider.register('beers.order', ['app/data/e-commerce/order.json']);
-
-        // Navigation
-
-        msNavigationServiceProvider.saveItem('admin.beers', {
-            title: 'Brews',
-            state: 'app.beers.list'
-        });
-    }
-})();
-(function ()
-{
-    'use strict';
-
-    BeersController.$inject = ["$state", "$scope", "$mdDialog", "$document", "beerService"];
-    angular
-        .module('app.admin.beers')
-        .controller('BeersController', BeersController);
-
-    /** @ngInject */
-    function BeersController($state, $scope, $mdDialog, $document, beerService)
-    {
-        var vm = this;
-
-        // Data
-        
-        // Methods
-        init();
-        //////////
-
-        function init() {
-            vm.beerGridOptions = beerService.gridOptions('vm.beers');
-        }
-
-    }
-})();
-(function ()
-{
-    'use strict';
-
-    config.$inject = ["$stateProvider", "$translatePartialLoaderProvider", "msApiProvider", "msNavigationServiceProvider"];
-    angular
         .module('app.vendings',
             [
                 // 3rd Party Dependencies
@@ -3390,6 +2822,574 @@
 
     }
 })();
+(function ()
+{
+    'use strict';
+
+    config.$inject = ["$stateProvider", "$translatePartialLoaderProvider", "msApiProvider", "msNavigationServiceProvider"];
+    angular
+        .module('app.admin.locations',
+            [
+                // 3rd Party Dependencies
+                'dx'
+            ]
+        )
+        .config(config);
+
+    /** @ngInject */
+    function config($stateProvider, $translatePartialLoaderProvider, msApiProvider, msNavigationServiceProvider)
+    {
+        // State
+        $stateProvider
+            .state('app.locations', {
+                abstract: true,
+                url     : '/locations'
+            })
+            .state('app.locations.list', {
+                url      : '/list',
+                views    : {
+                    'content@app': {
+                        templateUrl: 'app/main/admin/locations/views/list-view/locations.html',
+                        controller : 'LocationsController as vm'
+                    }
+                },
+                 resolve : {
+                    currentAuth: ["auth", function (auth) {
+                        // returns a promisse so the resolve waits for it to complete
+                        return auth.$requireSignIn();
+                    }],
+                    tenantInfo: ["auth", "authService", function(auth, authService){
+                        return authService.retrieveTenant();
+                    }],
+                    settings: ["adminService", function(adminService) {
+                        return adminService.getCurrentSettings();
+                    }]
+                },
+                bodyClass: 'locations'
+            });
+
+        // Translation
+        $translatePartialLoaderProvider.addPart('app/main/admin/locations');
+
+        // Api
+        msApiProvider.register('locations.dashboard', ['app/data/e-commerce/dashboard.json']);
+        msApiProvider.register('locations.products', ['app/data/e-commerce/products.json']);
+        msApiProvider.register('locations.product', ['app/data/e-commerce/product.json']);
+        msApiProvider.register('locations.orders', ['app/data/e-commerce/orders.json']);
+        msApiProvider.register('locations.statuses', ['app/data/e-commerce/statuses.json']);
+        msApiProvider.register('locations.order', ['app/data/e-commerce/order.json']);
+
+        // Navigation
+
+        msNavigationServiceProvider.saveItem('admin.locations', {
+            title: 'Locations',
+            state: 'app.locations.list'
+        });
+    }
+})();
+(function ()
+{
+    'use strict';
+
+    LocationsController.$inject = ["$state", "$scope", "$mdDialog", "$document", "locationService"];
+    angular
+        .module('app.admin.locations')
+        .controller('LocationsController', LocationsController);
+
+    /** @ngInject */
+    function LocationsController($state, $scope, $mdDialog, $document, locationService)
+    {
+        var vm = this;
+
+        // Data
+        
+        // Methods
+        init();
+        //////////
+
+        function init() {
+            vm.locationGridOptions = locationService.gridOptions('vm.locations');
+        }
+
+    }
+})();
+(function ()
+{
+    'use strict';
+
+    config.$inject = ["$stateProvider", "$translatePartialLoaderProvider", "msApiProvider", "msNavigationServiceProvider"];
+    angular
+        .module('app.admin.kegs',
+            [
+                // 3rd Party Dependencies
+                'dx'
+            ]
+        )
+        .config(config);
+
+    /** @ngInject */
+    function config($stateProvider, $translatePartialLoaderProvider, msApiProvider, msNavigationServiceProvider)
+    {
+        // State
+        $stateProvider
+            .state('app.kegs', {
+                abstract: true,
+                url     : '/kegs'
+            })
+            .state('app.kegs.list', {
+                url      : '/list',
+                views    : {
+                    'content@app': {
+                        templateUrl: 'app/main/admin/kegs/views/list-view/kegs.html',
+                        controller : 'KegsController as vm'
+                    }
+                },
+                 resolve : {
+                    currentAuth: ["auth", function (auth) {
+                        // returns a promisse so the resolve waits for it to complete
+                        return auth.$requireSignIn();
+                    }],
+                    tenantInfo: ["auth", "authService", function(auth, authService){
+                        return authService.retrieveTenant();
+                    }],
+                    settings: ["adminService", function(adminService) {
+                        return adminService.getCurrentSettings();
+                    }]
+                },
+                bodyClass: 'kegs'
+            });
+
+        // Translation
+        $translatePartialLoaderProvider.addPart('app/main/admin/kegs');
+
+        // Api
+        msApiProvider.register('kegs.dashboard', ['app/data/e-commerce/dashboard.json']);
+        msApiProvider.register('kegs.products', ['app/data/e-commerce/products.json']);
+        msApiProvider.register('kegs.product', ['app/data/e-commerce/product.json']);
+        msApiProvider.register('kegs.orders', ['app/data/e-commerce/orders.json']);
+        msApiProvider.register('kegs.statuses', ['app/data/e-commerce/statuses.json']);
+        msApiProvider.register('kegs.order', ['app/data/e-commerce/order.json']);
+
+        // Navigation
+
+        msNavigationServiceProvider.saveItem('admin.kegs', {
+            title: 'Kegs',
+            state: 'app.kegs.list'
+        });
+    }
+})();
+(function ()
+{
+    'use strict';
+
+    KegsController.$inject = ["$state", "$scope", "$mdDialog", "$document", "kegService"];
+    angular
+        .module('app.admin.kegs')
+        .controller('KegsController', KegsController);
+
+    /** @ngInject */
+    function KegsController($state, $scope, $mdDialog, $document, kegService)
+    {
+        var vm = this;
+
+        // Data
+        
+        // Methods
+        init();
+        //////////
+
+        function init() {
+            vm.kegGridOptions = kegService.gridOptions('vm.kegs');
+        }
+
+    }
+})();
+(function ()
+{
+    'use strict';
+
+    config.$inject = ["$stateProvider", "$translatePartialLoaderProvider", "msApiProvider", "msNavigationServiceProvider"];
+    angular
+        .module('app.admin.drivers',
+            [
+                // 3rd Party Dependencies
+                'dx'
+            ]
+        )
+        .config(config);
+
+    /** @ngInject */
+    function config($stateProvider, $translatePartialLoaderProvider, msApiProvider, msNavigationServiceProvider)
+    {
+        // State
+        $stateProvider
+            .state('app.drivers', {
+                abstract: true,
+                url     : '/drivers'
+            })
+            .state('app.drivers.list', {
+                url      : '/list',
+                views    : {
+                    'content@app': {
+                        templateUrl: 'app/main/admin/drivers/views/list-view/drivers.html',
+                        controller : 'DriversController as vm'
+                    }
+                },
+                 resolve : {
+                    currentAuth: ["auth", function (auth) {
+                        // returns a promisse so the resolve waits for it to complete
+                        return auth.$requireSignIn();
+                    }],
+                    tenantInfo: ["auth", "authService", function(auth, authService){
+                        return authService.retrieveTenant();
+                    }],
+                    settings: ["adminService", function(adminService) {
+                        return adminService.getCurrentSettings();
+                    }]
+                },
+                bodyClass: 'drivers'
+            });
+
+        // Translation
+        $translatePartialLoaderProvider.addPart('app/main/admin/drivers');
+
+        // Api
+        msApiProvider.register('drivers.dashboard', ['app/data/e-commerce/dashboard.json']);
+        msApiProvider.register('drivers.products', ['app/data/e-commerce/products.json']);
+        msApiProvider.register('drivers.product', ['app/data/e-commerce/product.json']);
+        msApiProvider.register('drivers.orders', ['app/data/e-commerce/orders.json']);
+        msApiProvider.register('drivers.statuses', ['app/data/e-commerce/statuses.json']);
+        msApiProvider.register('drivers.order', ['app/data/e-commerce/order.json']);
+
+        // Navigation
+
+        msNavigationServiceProvider.saveItem('admin.drivers', {
+            title: 'Drivers',
+            state: 'app.drivers.list'
+        });
+    }
+})();
+(function ()
+{
+    'use strict';
+
+    DriversController.$inject = ["$state", "$scope", "$mdDialog", "$document", "driverService"];
+    angular
+        .module('app.admin.drivers')
+        .controller('DriversController', DriversController);
+
+    /** @ngInject */
+    function DriversController($state, $scope, $mdDialog, $document, driverService)
+    {
+        var vm = this;
+
+        // Data
+        
+        // Methods
+        init();
+        //////////
+
+        function init() {
+            vm.driverGridOptions = driverService.gridOptions('vm.drivers');
+        }
+
+    }
+})();
+(function ()
+{
+    'use strict';
+
+    CustomersController.$inject = ["$state", "$scope", "$mdDialog", "$document", "customerService"];
+    angular
+        .module('app.admin.customers')
+        .controller('CustomersController', CustomersController);
+
+    /** @ngInject */
+    function CustomersController($state, $scope, $mdDialog, $document, customerService)
+    {
+        var vm = this;
+
+        // Data
+        
+        // Methods
+        vm.addDialog = addDialog;
+        vm.editDialog = editDialog;
+        init();
+        //////////
+
+        function init() {
+            vm.customerGridOptions = customerService.gridOptions('vm.customers');
+        }
+
+         /**
+         * Add New Row
+         */
+        function addDialog(ev)
+        {
+            $mdDialog.show({
+                controller         : 'CustomerDialogController',
+                controllerAs       : 'vm',
+                templateUrl        : 'app/main/admin/customers/views/dialogs/customer-dialog.html',
+                parent             : angular.element($document.body),
+                targetEvent        : ev,
+                clickOutsideToClose: true,
+                locals             : {
+                    dialogData: {
+                        dialogType: 'add'
+                    }
+                }
+            });
+        }
+
+        /**
+         * Edit Dialog
+         */
+        function editDialog(ev, formView, formData)
+        {
+            $mdDialog.show({
+                controller         : 'CustomerDialogController',
+                controllerAs       : 'vm',
+                templateUrl        : 'app/main/apps/customers/views/dialogs/add-edit/edit-dialog.html',
+                parent             : angular.element($document.body),
+                targetEvent        : ev,
+                clickOutsideToClose: true,
+                locals             : {
+                    dialogData: {
+                        chartData : vm.data,
+                        dialogType: 'edit',
+                        formView  : formView,
+                        formData  : formData
+                    }
+                }
+            });
+        }
+
+    }
+})();
+(function () {
+    'use strict';
+
+    CustomerDialogController.$inject = ["$mdDialog", "dialogData", "customerService"];
+    angular
+        .module('app.admin.customers')
+        .controller('CustomerDialogController', CustomerDialogController);
+
+    /** @ngInject */
+    function CustomerDialogController($mdDialog, dialogData, customerService) {
+        var vm = this,
+            dxFormInstance;
+
+        // Data
+        vm.form = {
+            from: 'johndoe@creapond.com'
+        };
+
+        vm.hiddenCC = true;
+        vm.hiddenBCC = true;
+
+        vm.customers = {};
+
+        vm.formOptions = customerService.formOptions();
+
+        // Methods
+        vm.closeDialog = closeDialog;
+
+        //////////
+
+        function closeDialog() {
+            dxFormInstance = $('#customer-form').dxForm('instance');
+            if(dxFormInstance.validate().isValid === true) {
+                customerService.saveData(dxFormInstance.option('formData')).then(function(data) {
+                    $mdDialog.hide();
+                });
+            }
+            //$mdDialog.hide();
+        }
+    }
+})();
+
+(function ()
+{
+    'use strict';
+
+    config.$inject = ["$stateProvider", "$translatePartialLoaderProvider", "msApiProvider", "msNavigationServiceProvider"];
+    angular
+        .module('app.admin.containers',
+            [
+                // 3rd Party Dependencies
+                'dx'
+            ]
+        )
+        .config(config);
+
+    /** @ngInject */
+    function config($stateProvider, $translatePartialLoaderProvider, msApiProvider, msNavigationServiceProvider)
+    {
+        // State
+        $stateProvider
+            .state('app.containers', {
+                abstract: true,
+                url     : '/containers'
+            })
+            .state('app.containers.list', {
+                url      : '/list',
+                views    : {
+                    'content@app': {
+                        templateUrl: 'app/main/admin/containers/views/list-view/containers.html',
+                        controller : 'ContainersController as vm'
+                    }
+                },
+                 resolve : {
+                    currentAuth: ["auth", function (auth) {
+                        // returns a promisse so the resolve waits for it to complete
+                        return auth.$requireSignIn();
+                    }],
+                    tenantInfo: ["auth", "authService", function(auth, authService){
+                        return authService.retrieveTenant();
+                    }],
+                    settings: ["adminService", function(adminService) {
+                        return adminService.getCurrentSettings();
+                    }]
+                },
+                bodyClass: 'containers'
+            });
+
+        // Translation
+        $translatePartialLoaderProvider.addPart('app/main/admin/containers');
+
+        // Api
+        msApiProvider.register('containers.dashboard', ['app/data/e-commerce/dashboard.json']);
+        msApiProvider.register('containers.products', ['app/data/e-commerce/products.json']);
+        msApiProvider.register('containers.product', ['app/data/e-commerce/product.json']);
+        msApiProvider.register('containers.orders', ['app/data/e-commerce/orders.json']);
+        msApiProvider.register('containers.statuses', ['app/data/e-commerce/statuses.json']);
+        msApiProvider.register('containers.order', ['app/data/e-commerce/order.json']);
+
+        // Navigation
+
+        msNavigationServiceProvider.saveItem('admin.containers', {
+            title: 'Containers',
+            state: 'app.containers.list'
+        });
+    }
+})();
+(function ()
+{
+    'use strict';
+
+    ContainersController.$inject = ["$state", "$scope", "$mdDialog", "$document", "containerService"];
+    angular
+        .module('app.admin.containers')
+        .controller('ContainersController', ContainersController);
+
+    /** @ngInject */
+    function ContainersController($state, $scope, $mdDialog, $document, containerService)
+    {
+        var vm = this;
+
+        // Data
+        
+        // Methods
+        init();
+        //////////
+
+        function init() {
+            vm.containerGridOptions = containerService.gridOptions('vm.containers');
+        }
+
+    }
+})();
+(function ()
+{
+    'use strict';
+
+    config.$inject = ["$stateProvider", "$translatePartialLoaderProvider", "msApiProvider", "msNavigationServiceProvider"];
+    angular
+        .module('app.admin.beers',
+            [
+                // 3rd Party Dependencies
+                'dx'
+            ]
+        )
+        .config(config);
+
+    /** @ngInject */
+    function config($stateProvider, $translatePartialLoaderProvider, msApiProvider, msNavigationServiceProvider)
+    {
+        // State
+        $stateProvider
+            .state('app.beers', {
+                abstract: true,
+                url     : '/beers'
+            })
+            .state('app.beers.list', {
+                url      : '/list',
+                views    : {
+                    'content@app': {
+                        templateUrl: 'app/main/admin/beers/views/list-view/beers.html',
+                        controller : 'BeersController as vm'
+                    }
+                },
+                 resolve : {
+                    currentAuth: ["auth", function (auth) {
+                        // returns a promisse so the resolve waits for it to complete
+                        return auth.$requireSignIn();
+                    }],
+                    tenantInfo: ["auth", "authService", function(auth, authService){
+                        return authService.retrieveTenant();
+                    }],
+                    settings: ["adminService", function(adminService) {
+                        return adminService.getCurrentSettings();
+                    }]
+                },
+                bodyClass: 'beers'
+            });
+
+        // Translation
+        $translatePartialLoaderProvider.addPart('app/main/admin/beers');
+
+        // Api
+        msApiProvider.register('beers.dashboard', ['app/data/e-commerce/dashboard.json']);
+        msApiProvider.register('beers.products', ['app/data/e-commerce/products.json']);
+        msApiProvider.register('beers.product', ['app/data/e-commerce/product.json']);
+        msApiProvider.register('beers.orders', ['app/data/e-commerce/orders.json']);
+        msApiProvider.register('beers.statuses', ['app/data/e-commerce/statuses.json']);
+        msApiProvider.register('beers.order', ['app/data/e-commerce/order.json']);
+
+        // Navigation
+
+        msNavigationServiceProvider.saveItem('admin.beers', {
+            title: 'Brews',
+            state: 'app.beers.list'
+        });
+    }
+})();
+(function ()
+{
+    'use strict';
+
+    BeersController.$inject = ["$state", "$scope", "$mdDialog", "$document", "beerService"];
+    angular
+        .module('app.admin.beers')
+        .controller('BeersController', BeersController);
+
+    /** @ngInject */
+    function BeersController($state, $scope, $mdDialog, $document, beerService)
+    {
+        var vm = this;
+
+        // Data
+        
+        // Methods
+        init();
+        //////////
+
+        function init() {
+            vm.beerGridOptions = beerService.gridOptions('vm.beers');
+        }
+
+    }
+})();
 (function () {
     'use strict';
 
@@ -3671,855 +3671,6 @@
          */
         function deleteTax(key) {
             var ref = rootRef.child('tenant-taxes').child(tenantId).child(key['$id']);
-            return firebaseUtils.updateData(ref, {deactivated: false});
-        }
-
-    }
-}());
-(function () {
-    'use strict';
-
-    locationService.$inject = ["$firebaseArray", "$firebaseObject", "$q", "authService", "auth", "firebaseUtils", "dxUtils", "config"];
-    angular
-        .module('app.admin.locations')
-        .factory('locationService', locationService);
-
-    /** @ngInject */
-    function locationService($firebaseArray, $firebaseObject, $q, authService, auth,firebaseUtils, dxUtils, config) {
-        var tenantId = authService.getCurrentTenant();
-        // Private variables
-
-        var service = {
-            gridOptions: gridOptions,
-            saveLocation: saveLocation,
-            updateLocation: updateLocation,
-            fetchLocationList: fetchLocationList
-        };
-
-        return service;
-
-        //////////
-
-        /**
-         * Grid Options for location list
-         * @param {Object} dataSource 
-         */
-        function gridOptions(dataSource) {
-            var gridOptions = dxUtils.createGrid(),
-                otherConfig = {
-                    dataSource: {
-                        load: function () {
-                            var defer = $q.defer();
-                            fetchLocationList().then(function (data) {
-                                defer.resolve(data);
-                            });
-                            return defer.promise;
-                        },
-                        insert: function (locationObj) {
-                            saveLocation(locationObj);
-                        },
-                        update: function (key, locationObj) {
-                            updateLocation(key, locationObj);
-                        },
-                        remove: function (key) {
-                            deleteLocation(key);
-                        }
-                    },
-                    summary: {
-                        totalItems: [{
-                            column: 'name',
-                            summaryType: 'count'
-                        }]
-                    }, 
-                    columns: config.locationGridCols(),
-                    export: {
-                        enabled: true,
-                        fileName: 'Locations',
-                        allowExportSelectedData: true
-                    }
-                };
-
-            angular.extend(gridOptions, otherConfig);
-            return gridOptions;
-        };
-
-        /**
-         * Save form data
-         * @returns {Object} Location Form data
-         */
-        function saveLocation(locationObj) {
-            var ref = rootRef.child('tenant-locations').child(tenantId);
-            locationObj.user = auth.$getAuth().uid;
-            return firebaseUtils.addData(ref, locationObj);
-        }
-
-        /**
-         * Fetch location list
-         * @returns {Object} Location data
-         */
-        function fetchLocationList() {
-            var ref = rootRef.child('tenant-locations').child(tenantId).orderByChild('deactivated').equalTo(null);
-            return firebaseUtils.fetchList(ref);
-        }
-
-        /**
-         * Fetch location list
-         * @returns {Object} Location data
-         */
-        function updateLocation(key, locationData) {
-            var ref = rootRef.child('tenant-locations').child(tenantId).child(key['$id']);
-            return firebaseUtils.updateData(ref, locationData);
-        }
-
-        /**
-         * Delete Location
-         * @returns {Object} location data
-         */
-        function deleteLocation(key) {
-            var ref = rootRef.child('tenant-locations').child(tenantId).child(key['$id']);
-            return firebaseUtils.updateData(ref, {deactivated: false});
-        }
-
-    }
-}());
-(function () {
-    'use strict';
-
-    kegService.$inject = ["$firebaseArray", "$firebaseObject", "$q", "authService", "auth", "firebaseUtils", "dxUtils", "config"];
-    angular
-        .module('app.admin.kegs')
-        .factory('kegService', kegService);
-
-    /** @ngInject */
-    function kegService($firebaseArray, $firebaseObject, $q, authService, auth, firebaseUtils, dxUtils, config) {
-        var tenantId = authService.getCurrentTenant(),
-            formInstance;
-        // Private variables
-
-        var service = {
-            gridOptions: gridOptions,
-            saveKeg: saveKeg,
-            updateKeg: updateKeg,
-            fetchKegList: fetchKegList
-        };
-
-        return service;
-
-        //////////
-
-        /**
-         * Grid Options for keg list
-         * @param {Object} dataSource 
-         */
-        function gridOptions(dataSource) {
-            var gridOptions = dxUtils.createGrid(),
-                otherConfig = {
-                    dataSource: {
-                        load: function () {
-                            var defer = $q.defer();
-                            fetchKegList().then(function (data) {
-                                defer.resolve(data);
-                            });
-                            return defer.promise;
-                        },
-                        insert: function (kegObj) {
-                            saveKeg(kegObj);
-                        },
-                        update: function (key, kegObj) {
-                            updateKeg(key, kegObj);
-                        },
-                        remove: function (key) {
-                            deleteKeg(key);
-                        }
-                    },
-                    summary: {
-                        totalItems: [{
-                            column: 'name',
-                            summaryType: 'count'
-                        }]
-                    },
-                    columns: config.kegGridCols(tenantId),
-                    export: {
-                        enabled: true,
-                        fileName: 'Kegs',
-                        allowExportSelectedData: true
-                    },
-                    editing: {
-                        mode: 'row',
-                        allowAdding: true,
-                        allowUpdating: false,
-                        allowDeleting: true
-                    }
-                };
-
-            angular.extend(gridOptions, otherConfig);
-            return gridOptions;
-        };
-
-        /**
-         * 
-         */
-        function keyMasterForm() {
-            var beerListSource = new DevExpress.data.DataSource({
-                load: function(loadOptions) {
-                    var defer = $q.defer(),
-                        ref = rootRef.child('tenant-beers').child(tenantId).orderByChild('deactivated').equalTo(null);
-                    firebaseUtils.fetchList(ref).then(function (data) {
-                        defer.resolve(data);
-                    });
-                    return defer.promise;
-                },
-                byKey: function(key) {
-                    var defer = $q.defer(),
-                    ref = rootRef.child('tenant-beers').child(tenantId).child(key);
-                    firebaseUtils.getItemByRef(ref).then(function (data) {
-                        defer.resolve(data);
-                    });
-                    return defer.promise;
-                }
-            });
-
-            var keyDataSource = new DevExpress.data.DataSource({
-                load: function(loadOptions) {
-                    var defer = $q.defer(),
-                        ref = rootRef.child('tenant-kegs').child(tenantId).orderByChild('deactivated').equalTo(null);
-                    firebaseUtils.fetchList(ref).then(function (data) {
-                        defer.resolve(data);
-                    });
-                    return defer.promise;
-                },
-                byKey: function(key) {
-                    var defer = $q.defer(),
-                    ref = rootRef.child('tenant-kegs').child(tenantId).child(key);
-                    firebaseUtils.getItemByRef(ref).then(function (data) {
-                        defer.resolve(data);
-                    });
-                    return defer.promise;
-                }
-            });
-
-            var keyGenForm = {
-                colCount: 2,
-                onInitialized: function (e) {
-                    formInstance = e.component;
-                },
-                items: [{
-                    dataField: 'batchDate',
-                    label: {
-                        text: 'Batch Date'
-                    },
-                    dataType: "date",
-                    validationRules: [{
-                        type: 'required',
-                        message: 'Date is required'
-                    }]
-                }, {
-                    dataField: 'beer',
-                    label: {
-                        text: 'Select Brew'
-                    },
-                    editorType: 'dxSelectBox',
-                    editorOptions: {
-                        dataSource: beerListSource,
-                        displayExpr: "name",
-                        valueExpr: "$id",
-                    },
-                    validationRules: [{
-                        type: 'required',
-                        message: 'Field is required'
-                    }]
-                }, {
-                    dataField: 'isBSelected',
-                    label: {
-                        text: 'Is Brew Selected'
-                    },
-                    editorType: 'dxCheckBox',
-                    editorOptions: {
-                        value: false
-                    }
-                }, {
-                    dataField: 'LtrsProduced',
-                    label: {
-                        text: 'Produced (Ltrs.)'
-                    },
-                    editorType: 'dxNumberBox',
-                    validationRules: [{
-                        type: 'required',
-                        message: 'Field is required'
-                    }]
-                }]
-            };
-            return keyGenForm;
-        }
-        /**
-         * Save form data
-         * @returns {Object} Keg Form data
-         */
-        function saveKeg(kegObj) {
-            var ref = rootRef.child('tenant-kegs').child(tenantId);
-            kegObj.user = auth.$getAuth().uid;
-            kegObj.LtrsBalanced = kegObj.ProducedLtrs;
-            return firebaseUtils.addData(ref, kegObj);
-        }
-
-        /**
-         * Fetch keg list
-         * @returns {Object} Keg data
-         */
-        function fetchKegList() {
-            var ref = rootRef.child('tenant-kegs').child(tenantId).orderByChild('deactivated').equalTo(null);
-            return firebaseUtils.fetchList(ref);
-        }
-
-        /**
-         * Fetch keg list
-         * @returns {Object} Keg data
-         */
-        function updateKeg(key, kegData) {
-            var ref = rootRef.child('tenant-kegs').child(tenantId).child(key['$id']);
-            return firebaseUtils.updateData(ref, kegData);
-        }
-
-        /**
-         * Delete Keg
-         * @returns {Object} keg data
-         */
-        function deleteKeg(key) {
-            var ref = rootRef.child('tenant-kegs').child(tenantId).child(key['$id']);
-            return firebaseUtils.updateData(ref, { deactivated: false });
-        }
-
-    }
-}());
-(function () {
-    'use strict';
-
-    driverService.$inject = ["$firebaseArray", "$firebaseObject", "$q", "authService", "auth", "firebaseUtils", "dxUtils", "config"];
-    angular
-        .module('app.admin.drivers')
-        .factory('driverService', driverService);
-
-    /** @ngInject */
-    function driverService($firebaseArray, $firebaseObject, $q, authService, auth,firebaseUtils, dxUtils, config) {
-        var tenantId = authService.getCurrentTenant();
-        // Private variables
-
-        var service = {
-            gridOptions: gridOptions,
-            saveDriver: saveDriver,
-            updateDriver: updateDriver,
-            fetchDriverList: fetchDriverList
-        };
-
-        return service;
-
-        //////////
-
-        /**
-         * Grid Options for driver list
-         * @param {Object} dataSource 
-         */
-        function gridOptions(dataSource) {
-            var gridOptions = dxUtils.createGrid(),
-                otherConfig = {
-                    dataSource: {
-                        load: function () {
-                            var defer = $q.defer();
-                            fetchDriverList().then(function (data) {
-                                defer.resolve(data);
-                            });
-                            return defer.promise;
-                        },
-                        insert: function (driverObj) {
-                            saveDriver(driverObj);
-                        },
-                        update: function (key, driverObj) {
-                            updateDriver(key, driverObj);
-                        },
-                        remove: function (key) {
-                            deleteDriver(key);
-                        }
-                    },
-                    summary: {
-                        totalItems: [{
-                            column: 'name',
-                            summaryType: 'count'
-                        }]
-                    }, 
-                    columns: config.driverGridCols(),
-                    export: {
-                        enabled: true,
-                        fileName: 'Drivers',
-                        allowExportSelectedData: true
-                    }
-                };
-
-            angular.extend(gridOptions, otherConfig);
-            return gridOptions;
-        };
-
-        /**
-         * Save form data
-         * @returns {Object} Driver Form data
-         */
-        function saveDriver(driverObj) {
-            var ref = rootRef.child('tenant-drivers').child(tenantId);
-            driverObj.user = auth.$getAuth().uid;
-            return firebaseUtils.addData(ref, driverObj);
-        }
-
-        /**
-         * Fetch driver list
-         * @returns {Object} Driver data
-         */
-        function fetchDriverList() {
-            var ref = rootRef.child('tenant-drivers').child(tenantId).orderByChild('deactivated').equalTo(null);
-            return firebaseUtils.fetchList(ref);
-        }
-
-        /**
-         * Fetch driver list
-         * @returns {Object} Driver data
-         */
-        function updateDriver(key, driverData) {
-            var ref = rootRef.child('tenant-drivers').child(tenantId).child(key['$id']);
-            return firebaseUtils.updateData(ref, driverData);
-        }
-
-        /**
-         * Delete Driver
-         * @returns {Object} driver data
-         */
-        function deleteDriver(key) {
-            var ref = rootRef.child('tenant-drivers').child(tenantId).child(key['$id']);
-            return firebaseUtils.updateData(ref, {deactivated: false});
-        }
-
-    }
-}());
-(function () {
-    'use strict';
-
-    customerService.$inject = ["$firebaseArray", "$firebaseObject", "$q", "authService", "auth", "firebaseUtils", "dxUtils", "config"];
-    angular
-        .module('app.admin.customers')
-        .factory('customerService', customerService);
-
-    /** @ngInject */
-    function customerService($firebaseArray, $firebaseObject, $q, authService, auth, firebaseUtils, dxUtils, config) {
-        var tenantId = authService.getCurrentTenant();
-        // Private variables
-
-        var service = {
-            formOptions: formOptions,
-            gridOptions: gridOptions,
-            saveCustomer: saveCustomer,
-            updateCustomer: updateCustomer,
-            fetchCustomerList: fetchCustomerList
-        };
-
-        return service;
-
-        //////////
-
-        /**
-         * Return form Item Configuration
-         * @returns {Object} Item configuration
-         */
-        function formOptions() {
-            var formOptionsItems = {
-
-                bindingOptions: {
-                    formData: 'vm.customers'
-                },
-                colCount: 2,
-                items: [{
-                    dataField: 'name',
-                    label: {
-                        text: 'Name'
-                    },
-                    validationRules: [{
-                        type: 'required',
-                        message: 'Name is required'
-                    }]
-                }, {
-                    dataField: 'phone',
-                    label: {
-                        text: 'Phone'
-                    },
-                    editorType: 'dxNumberBox',
-                    validationRules: [{
-                        type: 'required',
-                        message: 'Phone number is required'
-                    }]
-                }, {
-                    dataField: 'email',
-                    label: {
-                        text: 'Email'
-                    },
-                    validationRules: [{
-                        type: 'email',
-                        message: 'Please enter valid e-mail address'
-                    }]
-                }, {
-                    dataField: 'alias',
-                    label: {
-                        text: 'Short Name'
-                    }
-                }, {
-                    dataField: 'gstno',
-                    label: {
-                        text: 'GST No'
-                    },
-                    editorOptions: {
-                        mask: '00AAAAAAAAAA0A0'
-                    }
-                }, {
-                    dataField: 'adress',
-                    label: {
-                        text: 'Address'
-                    }
-                }, {
-                    dataField: 'city',
-                    label: {
-                        text: 'City'
-                    }
-                }, {
-                    dataField: 'state',
-                    label: {
-                        text: 'State'
-                    }
-                }, {
-                    dataField: 'zipcode',
-                    label: {
-                        text: 'ZIP/Pincode'
-                    },
-                    editorOptions: {
-                        mask: '000000'
-                    }
-                }],
-                onContentReady: function () {
-                    var dxFormInstance = $('#customer-form').dxForm('instance');
-                }
-            };
-            return formOptionsItems;
-        }
-
-        /**
-         * Grid Options for customer list
-         * @param {Object} dataSource 
-         */
-        function gridOptions(dataSource) {
-            var gridOptions = dxUtils.createGrid(),
-                otherConfig = {
-                    dataSource: {
-                        load: function () {
-                            var defer = $q.defer();
-                            fetchCustomerList().then(function (data) {
-                                defer.resolve(data);
-                            });
-                            return defer.promise;
-                        },
-                        insert: function (customerObj) {
-                            saveCustomer(customerObj);
-                        },
-                        update: function (key, customerObj) {
-                            updateCustomer(key, customerObj);
-                        },
-                        remove: function (key) {
-                            deleteCustomer(key);
-                        }
-                    },
-                    summary: {
-                        totalItems: [{
-                            column: 'name',
-                            summaryType: 'count'
-                        }]
-                    },
-                    columns: config.customerGridCols(),
-                    export: {
-                        enabled: true,
-                        fileName: 'Customers',
-                        allowExportSelectedData: true
-                    },
-                    editing: {
-                        allowAdding: true,
-                        allowUpdating: true,
-                        allowDeleting: true,
-                        mode: 'row',
-                        form: formOptions()
-                    }, onRowRemoving: function (e) {
-                        var d = $.Deferred();
-                        var ref = rootRef.child('tenant-customer-records').child(tenantId).child(e.data.$id).child('records').orderByChild('deactivated').equalTo(null);
-                        firebaseUtils.fetchList(ref).then(function (data) {
-                            if (data.length > 0) {
-                                d.reject("Can not delete the record");
-                            } else {
-                                d.resolve();
-                            }
-                        });
-                        e.cancel = d.promise();
-                    }
-                };
-
-            angular.extend(gridOptions, otherConfig);
-            return gridOptions;
-        };
-
-        /**
-         * Save form data
-         * @returns {Object} Customer Form data
-         */
-        function saveCustomer(customerObj) {
-            var ref = rootRef.child('tenant-customers').child(tenantId);
-            customerObj.membersSince = customerObj.membersSince.toString();
-            if(customerObj.anniversary) {
-                customerObj.anniversary = customerObj.anniversary.toString();
-            }
-             if (!customerObj.date) {
-                customerObj.date = new Date();
-            }
-            customerObj.date = customerObj.date.toString();
-            customerObj.user = auth.$getAuth().uid;
-            return firebaseUtils.addData(ref, customerObj);
-        }
-
-        /**
-         * Fetch customer list
-         * @returns {Object} Customer data
-         */
-        function fetchCustomerList() {
-            var ref = rootRef.child('tenant-customers').child(tenantId).orderByChild('deactivated').equalTo(null);
-            return firebaseUtils.fetchList(ref);
-        }
-
-        /**
-         * Fetch customer list
-         * @returns {Object} Customer data
-         */
-        function updateCustomer(key, customerData) {
-            var ref = rootRef.child('tenant-customers').child(tenantId).child(key['$id']);
-            return firebaseUtils.updateData(ref, customerData);
-        }
-
-        /**
-         * Delete Customer
-         * @returns {Object} customer data
-         */
-        function deleteCustomer(key) {
-            var ref = rootRef.child('tenant-customers').child(tenantId).child(key['$id']);
-            return firebaseUtils.updateData(ref, { deactivated: false });
-        }
-
-    }
-}());
-(function () {
-    'use strict';
-
-    containerService.$inject = ["$firebaseArray", "$firebaseObject", "$q", "authService", "auth", "firebaseUtils", "dxUtils", "config"];
-    angular
-        .module('app.admin.containers')
-        .factory('containerService', containerService);
-
-    /** @ngInject */
-    function containerService($firebaseArray, $firebaseObject, $q, authService, auth,firebaseUtils, dxUtils, config) {
-        var tenantId = authService.getCurrentTenant();
-        // Private variables
-
-        var service = {
-            gridOptions: gridOptions,
-            saveContainer: saveContainer,
-            updateContainer: updateContainer,
-            fetchContainerList: fetchContainerList
-        };
-
-        return service;
-
-        //////////
-
-        /**
-         * Grid Options for container list
-         * @param {Object} dataSource 
-         */
-        function gridOptions(dataSource) {
-            var gridOptions = dxUtils.createGrid(),
-                otherConfig = {
-                    dataSource: {
-                        load: function () {
-                            var defer = $q.defer();
-                            fetchContainerList().then(function (data) {
-                                defer.resolve(data);
-                            });
-                            return defer.promise;
-                        },
-                        insert: function (containerObj) {
-                            saveContainer(containerObj);
-                        },
-                        update: function (key, containerObj) {
-                            updateContainer(key, containerObj);
-                        },
-                        remove: function (key) {
-                            deleteContainer(key);
-                        }
-                    },
-                    summary: {
-                        totalItems: [{
-                            column: 'name',
-                            summaryType: 'count'
-                        }]
-                    }, 
-                    columns: config.containerGridCols(),
-                    export: {
-                        enabled: true,
-                        fileName: 'Containers',
-                        allowExportSelectedData: true
-                    }
-                };
-
-            angular.extend(gridOptions, otherConfig);
-            return gridOptions;
-        };
-
-        /**
-         * Save form data
-         * @returns {Object} Container Form data
-         */
-        function saveContainer(containerObj) {
-            var ref = rootRef.child('tenant-containers').child(tenantId);
-            containerObj.user = auth.$getAuth().uid;
-            return firebaseUtils.addData(ref, containerObj);
-        }
-
-        /**
-         * Fetch container list
-         * @returns {Object} Container data
-         */
-        function fetchContainerList() {
-            var ref = rootRef.child('tenant-containers').child(tenantId).orderByChild('deactivated').equalTo(null);
-            return firebaseUtils.fetchList(ref);
-        }
-
-        /**
-         * Fetch container list
-         * @returns {Object} Container data
-         */
-        function updateContainer(key, containerData) {
-            var ref = rootRef.child('tenant-containers').child(tenantId).child(key['$id']);
-            return firebaseUtils.updateData(ref, containerData);
-        }
-
-        /**
-         * Delete Container
-         * @returns {Object} container data
-         */
-        function deleteContainer(key) {
-            var ref = rootRef.child('tenant-containers').child(tenantId).child(key['$id']);
-            return firebaseUtils.updateData(ref, {deactivated: false});
-        }
-
-    }
-}());
-(function () {
-    'use strict';
-
-    beerService.$inject = ["$firebaseArray", "$firebaseObject", "$q", "authService", "auth", "firebaseUtils", "dxUtils", "config"];
-    angular
-        .module('app.admin.beers')
-        .factory('beerService', beerService);
-
-    /** @ngInject */
-    function beerService($firebaseArray, $firebaseObject, $q, authService, auth,firebaseUtils, dxUtils, config) {
-        var tenantId = authService.getCurrentTenant();
-        // Private variables
-
-        var service = {
-            gridOptions: gridOptions,
-            saveBeer: saveBeer,
-            updateBeer: updateBeer,
-            fetchBeerList: fetchBeerList
-        };
-
-        return service;
-
-        //////////
-
-        /**
-         * Grid Options for beer list
-         * @param {Object} dataSource 
-         */
-        function gridOptions(dataSource) {
-            var gridOptions = dxUtils.createGrid(),
-                otherConfig = {
-                    dataSource: {
-                        load: function () {
-                            var defer = $q.defer();
-                            fetchBeerList().then(function (data) {
-                                defer.resolve(data);
-                            });
-                            return defer.promise;
-                        },
-                        insert: function (beerObj) {
-                            saveBeer(beerObj);
-                        },
-                        update: function (key, beerObj) {
-                            updateBeer(key, beerObj);
-                        },
-                        remove: function (key) {
-                            deleteBeer(key);
-                        }
-                    },
-                    summary: {
-                        totalItems: [{
-                            column: 'name',
-                            summaryType: 'count'
-                        }]
-                    }, 
-                    columns: config.beerGridCols(),
-                    export: {
-                        enabled: true,
-                        fileName: 'Brews',
-                        allowExportSelectedData: true
-                    }
-                };
-
-            angular.extend(gridOptions, otherConfig);
-            return gridOptions;
-        };
-
-        /**
-         * Save form data
-         * @returns {Object} Beer Form data
-         */
-        function saveBeer(beerObj) {
-            var ref = rootRef.child('tenant-beers').child(tenantId);
-            beerObj.user = auth.$getAuth().uid;
-            return firebaseUtils.addData(ref, beerObj);
-        }
-
-        /**
-         * Fetch beer list
-         * @returns {Object} Beer data
-         */
-        function fetchBeerList() {
-            var ref = rootRef.child('tenant-beers').child(tenantId).orderByChild('deactivated').equalTo(null);
-            return firebaseUtils.fetchList(ref);
-        }
-
-        /**
-         * Fetch beer list
-         * @returns {Object} Beer data
-         */
-        function updateBeer(key, beerData) {
-            var ref = rootRef.child('tenant-beers').child(tenantId).child(key['$id']);
-            return firebaseUtils.updateData(ref, beerData);
-        }
-
-        /**
-         * Delete Beer
-         * @returns {Object} beer data
-         */
-        function deleteBeer(key) {
-            var ref = rootRef.child('tenant-beers').child(tenantId).child(key['$id']);
             return firebaseUtils.updateData(ref, {deactivated: false});
         }
 
@@ -5714,6 +4865,855 @@
 
     }
 }());
+(function () {
+    'use strict';
+
+    locationService.$inject = ["$firebaseArray", "$firebaseObject", "$q", "authService", "auth", "firebaseUtils", "dxUtils", "config"];
+    angular
+        .module('app.admin.locations')
+        .factory('locationService', locationService);
+
+    /** @ngInject */
+    function locationService($firebaseArray, $firebaseObject, $q, authService, auth,firebaseUtils, dxUtils, config) {
+        var tenantId = authService.getCurrentTenant();
+        // Private variables
+
+        var service = {
+            gridOptions: gridOptions,
+            saveLocation: saveLocation,
+            updateLocation: updateLocation,
+            fetchLocationList: fetchLocationList
+        };
+
+        return service;
+
+        //////////
+
+        /**
+         * Grid Options for location list
+         * @param {Object} dataSource 
+         */
+        function gridOptions(dataSource) {
+            var gridOptions = dxUtils.createGrid(),
+                otherConfig = {
+                    dataSource: {
+                        load: function () {
+                            var defer = $q.defer();
+                            fetchLocationList().then(function (data) {
+                                defer.resolve(data);
+                            });
+                            return defer.promise;
+                        },
+                        insert: function (locationObj) {
+                            saveLocation(locationObj);
+                        },
+                        update: function (key, locationObj) {
+                            updateLocation(key, locationObj);
+                        },
+                        remove: function (key) {
+                            deleteLocation(key);
+                        }
+                    },
+                    summary: {
+                        totalItems: [{
+                            column: 'name',
+                            summaryType: 'count'
+                        }]
+                    }, 
+                    columns: config.locationGridCols(),
+                    export: {
+                        enabled: true,
+                        fileName: 'Locations',
+                        allowExportSelectedData: true
+                    }
+                };
+
+            angular.extend(gridOptions, otherConfig);
+            return gridOptions;
+        };
+
+        /**
+         * Save form data
+         * @returns {Object} Location Form data
+         */
+        function saveLocation(locationObj) {
+            var ref = rootRef.child('tenant-locations').child(tenantId);
+            locationObj.user = auth.$getAuth().uid;
+            return firebaseUtils.addData(ref, locationObj);
+        }
+
+        /**
+         * Fetch location list
+         * @returns {Object} Location data
+         */
+        function fetchLocationList() {
+            var ref = rootRef.child('tenant-locations').child(tenantId).orderByChild('deactivated').equalTo(null);
+            return firebaseUtils.fetchList(ref);
+        }
+
+        /**
+         * Fetch location list
+         * @returns {Object} Location data
+         */
+        function updateLocation(key, locationData) {
+            var ref = rootRef.child('tenant-locations').child(tenantId).child(key['$id']);
+            return firebaseUtils.updateData(ref, locationData);
+        }
+
+        /**
+         * Delete Location
+         * @returns {Object} location data
+         */
+        function deleteLocation(key) {
+            var ref = rootRef.child('tenant-locations').child(tenantId).child(key['$id']);
+            return firebaseUtils.updateData(ref, {deactivated: false});
+        }
+
+    }
+}());
+(function () {
+    'use strict';
+
+    kegService.$inject = ["$firebaseArray", "$firebaseObject", "$q", "authService", "auth", "firebaseUtils", "dxUtils", "config"];
+    angular
+        .module('app.admin.kegs')
+        .factory('kegService', kegService);
+
+    /** @ngInject */
+    function kegService($firebaseArray, $firebaseObject, $q, authService, auth, firebaseUtils, dxUtils, config) {
+        var tenantId = authService.getCurrentTenant(),
+            formInstance;
+        // Private variables
+
+        var service = {
+            gridOptions: gridOptions,
+            saveKeg: saveKeg,
+            updateKeg: updateKeg,
+            fetchKegList: fetchKegList
+        };
+
+        return service;
+
+        //////////
+
+        /**
+         * Grid Options for keg list
+         * @param {Object} dataSource 
+         */
+        function gridOptions(dataSource) {
+            var gridOptions = dxUtils.createGrid(),
+                otherConfig = {
+                    dataSource: {
+                        load: function () {
+                            var defer = $q.defer();
+                            fetchKegList().then(function (data) {
+                                defer.resolve(data);
+                            });
+                            return defer.promise;
+                        },
+                        insert: function (kegObj) {
+                            saveKeg(kegObj);
+                        },
+                        update: function (key, kegObj) {
+                            updateKeg(key, kegObj);
+                        },
+                        remove: function (key) {
+                            deleteKeg(key);
+                        }
+                    },
+                    summary: {
+                        totalItems: [{
+                            column: 'name',
+                            summaryType: 'count'
+                        }]
+                    },
+                    columns: config.kegGridCols(tenantId),
+                    export: {
+                        enabled: true,
+                        fileName: 'Kegs',
+                        allowExportSelectedData: true
+                    },
+                    editing: {
+                        mode: 'row',
+                        allowAdding: true,
+                        allowUpdating: false,
+                        allowDeleting: true
+                    }
+                };
+
+            angular.extend(gridOptions, otherConfig);
+            return gridOptions;
+        };
+
+        /**
+         * 
+         */
+        function keyMasterForm() {
+            var beerListSource = new DevExpress.data.DataSource({
+                load: function(loadOptions) {
+                    var defer = $q.defer(),
+                        ref = rootRef.child('tenant-beers').child(tenantId).orderByChild('deactivated').equalTo(null);
+                    firebaseUtils.fetchList(ref).then(function (data) {
+                        defer.resolve(data);
+                    });
+                    return defer.promise;
+                },
+                byKey: function(key) {
+                    var defer = $q.defer(),
+                    ref = rootRef.child('tenant-beers').child(tenantId).child(key);
+                    firebaseUtils.getItemByRef(ref).then(function (data) {
+                        defer.resolve(data);
+                    });
+                    return defer.promise;
+                }
+            });
+
+            var keyDataSource = new DevExpress.data.DataSource({
+                load: function(loadOptions) {
+                    var defer = $q.defer(),
+                        ref = rootRef.child('tenant-kegs').child(tenantId).orderByChild('deactivated').equalTo(null);
+                    firebaseUtils.fetchList(ref).then(function (data) {
+                        defer.resolve(data);
+                    });
+                    return defer.promise;
+                },
+                byKey: function(key) {
+                    var defer = $q.defer(),
+                    ref = rootRef.child('tenant-kegs').child(tenantId).child(key);
+                    firebaseUtils.getItemByRef(ref).then(function (data) {
+                        defer.resolve(data);
+                    });
+                    return defer.promise;
+                }
+            });
+
+            var keyGenForm = {
+                colCount: 2,
+                onInitialized: function (e) {
+                    formInstance = e.component;
+                },
+                items: [{
+                    dataField: 'batchDate',
+                    label: {
+                        text: 'Batch Date'
+                    },
+                    dataType: "date",
+                    validationRules: [{
+                        type: 'required',
+                        message: 'Date is required'
+                    }]
+                }, {
+                    dataField: 'beer',
+                    label: {
+                        text: 'Select Brew'
+                    },
+                    editorType: 'dxSelectBox',
+                    editorOptions: {
+                        dataSource: beerListSource,
+                        displayExpr: "name",
+                        valueExpr: "$id",
+                    },
+                    validationRules: [{
+                        type: 'required',
+                        message: 'Field is required'
+                    }]
+                }, {
+                    dataField: 'isBSelected',
+                    label: {
+                        text: 'Is Brew Selected'
+                    },
+                    editorType: 'dxCheckBox',
+                    editorOptions: {
+                        value: false
+                    }
+                }, {
+                    dataField: 'LtrsProduced',
+                    label: {
+                        text: 'Produced (Ltrs.)'
+                    },
+                    editorType: 'dxNumberBox',
+                    validationRules: [{
+                        type: 'required',
+                        message: 'Field is required'
+                    }]
+                }]
+            };
+            return keyGenForm;
+        }
+        /**
+         * Save form data
+         * @returns {Object} Keg Form data
+         */
+        function saveKeg(kegObj) {
+            var ref = rootRef.child('tenant-kegs').child(tenantId);
+            kegObj.user = auth.$getAuth().uid;
+            kegObj.LtrsBalanced = kegObj.ProducedLtrs;
+            return firebaseUtils.addData(ref, kegObj);
+        }
+
+        /**
+         * Fetch keg list
+         * @returns {Object} Keg data
+         */
+        function fetchKegList() {
+            var ref = rootRef.child('tenant-kegs').child(tenantId).orderByChild('deactivated').equalTo(null);
+            return firebaseUtils.fetchList(ref);
+        }
+
+        /**
+         * Fetch keg list
+         * @returns {Object} Keg data
+         */
+        function updateKeg(key, kegData) {
+            var ref = rootRef.child('tenant-kegs').child(tenantId).child(key['$id']);
+            return firebaseUtils.updateData(ref, kegData);
+        }
+
+        /**
+         * Delete Keg
+         * @returns {Object} keg data
+         */
+        function deleteKeg(key) {
+            var ref = rootRef.child('tenant-kegs').child(tenantId).child(key['$id']);
+            return firebaseUtils.updateData(ref, { deactivated: false });
+        }
+
+    }
+}());
+(function () {
+    'use strict';
+
+    driverService.$inject = ["$firebaseArray", "$firebaseObject", "$q", "authService", "auth", "firebaseUtils", "dxUtils", "config"];
+    angular
+        .module('app.admin.drivers')
+        .factory('driverService', driverService);
+
+    /** @ngInject */
+    function driverService($firebaseArray, $firebaseObject, $q, authService, auth,firebaseUtils, dxUtils, config) {
+        var tenantId = authService.getCurrentTenant();
+        // Private variables
+
+        var service = {
+            gridOptions: gridOptions,
+            saveDriver: saveDriver,
+            updateDriver: updateDriver,
+            fetchDriverList: fetchDriverList
+        };
+
+        return service;
+
+        //////////
+
+        /**
+         * Grid Options for driver list
+         * @param {Object} dataSource 
+         */
+        function gridOptions(dataSource) {
+            var gridOptions = dxUtils.createGrid(),
+                otherConfig = {
+                    dataSource: {
+                        load: function () {
+                            var defer = $q.defer();
+                            fetchDriverList().then(function (data) {
+                                defer.resolve(data);
+                            });
+                            return defer.promise;
+                        },
+                        insert: function (driverObj) {
+                            saveDriver(driverObj);
+                        },
+                        update: function (key, driverObj) {
+                            updateDriver(key, driverObj);
+                        },
+                        remove: function (key) {
+                            deleteDriver(key);
+                        }
+                    },
+                    summary: {
+                        totalItems: [{
+                            column: 'name',
+                            summaryType: 'count'
+                        }]
+                    }, 
+                    columns: config.driverGridCols(),
+                    export: {
+                        enabled: true,
+                        fileName: 'Drivers',
+                        allowExportSelectedData: true
+                    }
+                };
+
+            angular.extend(gridOptions, otherConfig);
+            return gridOptions;
+        };
+
+        /**
+         * Save form data
+         * @returns {Object} Driver Form data
+         */
+        function saveDriver(driverObj) {
+            var ref = rootRef.child('tenant-drivers').child(tenantId);
+            driverObj.user = auth.$getAuth().uid;
+            return firebaseUtils.addData(ref, driverObj);
+        }
+
+        /**
+         * Fetch driver list
+         * @returns {Object} Driver data
+         */
+        function fetchDriverList() {
+            var ref = rootRef.child('tenant-drivers').child(tenantId).orderByChild('deactivated').equalTo(null);
+            return firebaseUtils.fetchList(ref);
+        }
+
+        /**
+         * Fetch driver list
+         * @returns {Object} Driver data
+         */
+        function updateDriver(key, driverData) {
+            var ref = rootRef.child('tenant-drivers').child(tenantId).child(key['$id']);
+            return firebaseUtils.updateData(ref, driverData);
+        }
+
+        /**
+         * Delete Driver
+         * @returns {Object} driver data
+         */
+        function deleteDriver(key) {
+            var ref = rootRef.child('tenant-drivers').child(tenantId).child(key['$id']);
+            return firebaseUtils.updateData(ref, {deactivated: false});
+        }
+
+    }
+}());
+(function () {
+    'use strict';
+
+    customerService.$inject = ["$firebaseArray", "$firebaseObject", "$q", "authService", "auth", "firebaseUtils", "dxUtils", "config"];
+    angular
+        .module('app.admin.customers')
+        .factory('customerService', customerService);
+
+    /** @ngInject */
+    function customerService($firebaseArray, $firebaseObject, $q, authService, auth, firebaseUtils, dxUtils, config) {
+        var tenantId = authService.getCurrentTenant();
+        // Private variables
+
+        var service = {
+            formOptions: formOptions,
+            gridOptions: gridOptions,
+            saveCustomer: saveCustomer,
+            updateCustomer: updateCustomer,
+            fetchCustomerList: fetchCustomerList
+        };
+
+        return service;
+
+        //////////
+
+        /**
+         * Return form Item Configuration
+         * @returns {Object} Item configuration
+         */
+        function formOptions() {
+            var formOptionsItems = {
+
+                bindingOptions: {
+                    formData: 'vm.customers'
+                },
+                colCount: 2,
+                items: [{
+                    dataField: 'name',
+                    label: {
+                        text: 'Name'
+                    },
+                    validationRules: [{
+                        type: 'required',
+                        message: 'Name is required'
+                    }]
+                }, {
+                    dataField: 'phone',
+                    label: {
+                        text: 'Phone'
+                    },
+                    editorType: 'dxNumberBox',
+                    validationRules: [{
+                        type: 'required',
+                        message: 'Phone number is required'
+                    }]
+                }, {
+                    dataField: 'email',
+                    label: {
+                        text: 'Email'
+                    },
+                    validationRules: [{
+                        type: 'email',
+                        message: 'Please enter valid e-mail address'
+                    }]
+                }, {
+                    dataField: 'alias',
+                    label: {
+                        text: 'Short Name'
+                    }
+                }, {
+                    dataField: 'gstno',
+                    label: {
+                        text: 'GST No'
+                    },
+                    editorOptions: {
+                        mask: '00AAAAAAAAAA0A0'
+                    }
+                }, {
+                    dataField: 'adress',
+                    label: {
+                        text: 'Address'
+                    }
+                }, {
+                    dataField: 'city',
+                    label: {
+                        text: 'City'
+                    }
+                }, {
+                    dataField: 'state',
+                    label: {
+                        text: 'State'
+                    }
+                }, {
+                    dataField: 'zipcode',
+                    label: {
+                        text: 'ZIP/Pincode'
+                    },
+                    editorOptions: {
+                        mask: '000000'
+                    }
+                }],
+                onContentReady: function () {
+                    var dxFormInstance = $('#customer-form').dxForm('instance');
+                }
+            };
+            return formOptionsItems;
+        }
+
+        /**
+         * Grid Options for customer list
+         * @param {Object} dataSource 
+         */
+        function gridOptions(dataSource) {
+            var gridOptions = dxUtils.createGrid(),
+                otherConfig = {
+                    dataSource: {
+                        load: function () {
+                            var defer = $q.defer();
+                            fetchCustomerList().then(function (data) {
+                                defer.resolve(data);
+                            });
+                            return defer.promise;
+                        },
+                        insert: function (customerObj) {
+                            saveCustomer(customerObj);
+                        },
+                        update: function (key, customerObj) {
+                            updateCustomer(key, customerObj);
+                        },
+                        remove: function (key) {
+                            deleteCustomer(key);
+                        }
+                    },
+                    summary: {
+                        totalItems: [{
+                            column: 'name',
+                            summaryType: 'count'
+                        }]
+                    },
+                    columns: config.customerGridCols(),
+                    export: {
+                        enabled: true,
+                        fileName: 'Customers',
+                        allowExportSelectedData: true
+                    },
+                    editing: {
+                        allowAdding: true,
+                        allowUpdating: true,
+                        allowDeleting: true,
+                        mode: 'row',
+                        form: formOptions()
+                    }, onRowRemoving: function (e) {
+                        var d = $.Deferred();
+                        var ref = rootRef.child('tenant-customer-records').child(tenantId).child(e.data.$id).child('records').orderByChild('deactivated').equalTo(null);
+                        firebaseUtils.fetchList(ref).then(function (data) {
+                            if (data.length > 0) {
+                                d.reject("Can not delete the record");
+                            } else {
+                                d.resolve();
+                            }
+                        });
+                        e.cancel = d.promise();
+                    }
+                };
+
+            angular.extend(gridOptions, otherConfig);
+            return gridOptions;
+        };
+
+        /**
+         * Save form data
+         * @returns {Object} Customer Form data
+         */
+        function saveCustomer(customerObj) {
+            var ref = rootRef.child('tenant-customers').child(tenantId);
+            customerObj.membersSince = customerObj.membersSince.toString();
+            if(customerObj.anniversary) {
+                customerObj.anniversary = customerObj.anniversary.toString();
+            }
+             if (!customerObj.date) {
+                customerObj.date = new Date();
+            }
+            customerObj.date = customerObj.date.toString();
+            customerObj.user = auth.$getAuth().uid;
+            return firebaseUtils.addData(ref, customerObj);
+        }
+
+        /**
+         * Fetch customer list
+         * @returns {Object} Customer data
+         */
+        function fetchCustomerList() {
+            var ref = rootRef.child('tenant-customers').child(tenantId).orderByChild('deactivated').equalTo(null);
+            return firebaseUtils.fetchList(ref);
+        }
+
+        /**
+         * Fetch customer list
+         * @returns {Object} Customer data
+         */
+        function updateCustomer(key, customerData) {
+            var ref = rootRef.child('tenant-customers').child(tenantId).child(key['$id']);
+            return firebaseUtils.updateData(ref, customerData);
+        }
+
+        /**
+         * Delete Customer
+         * @returns {Object} customer data
+         */
+        function deleteCustomer(key) {
+            var ref = rootRef.child('tenant-customers').child(tenantId).child(key['$id']);
+            return firebaseUtils.updateData(ref, { deactivated: false });
+        }
+
+    }
+}());
+(function () {
+    'use strict';
+
+    containerService.$inject = ["$firebaseArray", "$firebaseObject", "$q", "authService", "auth", "firebaseUtils", "dxUtils", "config"];
+    angular
+        .module('app.admin.containers')
+        .factory('containerService', containerService);
+
+    /** @ngInject */
+    function containerService($firebaseArray, $firebaseObject, $q, authService, auth,firebaseUtils, dxUtils, config) {
+        var tenantId = authService.getCurrentTenant();
+        // Private variables
+
+        var service = {
+            gridOptions: gridOptions,
+            saveContainer: saveContainer,
+            updateContainer: updateContainer,
+            fetchContainerList: fetchContainerList
+        };
+
+        return service;
+
+        //////////
+
+        /**
+         * Grid Options for container list
+         * @param {Object} dataSource 
+         */
+        function gridOptions(dataSource) {
+            var gridOptions = dxUtils.createGrid(),
+                otherConfig = {
+                    dataSource: {
+                        load: function () {
+                            var defer = $q.defer();
+                            fetchContainerList().then(function (data) {
+                                defer.resolve(data);
+                            });
+                            return defer.promise;
+                        },
+                        insert: function (containerObj) {
+                            saveContainer(containerObj);
+                        },
+                        update: function (key, containerObj) {
+                            updateContainer(key, containerObj);
+                        },
+                        remove: function (key) {
+                            deleteContainer(key);
+                        }
+                    },
+                    summary: {
+                        totalItems: [{
+                            column: 'name',
+                            summaryType: 'count'
+                        }]
+                    }, 
+                    columns: config.containerGridCols(),
+                    export: {
+                        enabled: true,
+                        fileName: 'Containers',
+                        allowExportSelectedData: true
+                    }
+                };
+
+            angular.extend(gridOptions, otherConfig);
+            return gridOptions;
+        };
+
+        /**
+         * Save form data
+         * @returns {Object} Container Form data
+         */
+        function saveContainer(containerObj) {
+            var ref = rootRef.child('tenant-containers').child(tenantId);
+            containerObj.user = auth.$getAuth().uid;
+            return firebaseUtils.addData(ref, containerObj);
+        }
+
+        /**
+         * Fetch container list
+         * @returns {Object} Container data
+         */
+        function fetchContainerList() {
+            var ref = rootRef.child('tenant-containers').child(tenantId).orderByChild('deactivated').equalTo(null);
+            return firebaseUtils.fetchList(ref);
+        }
+
+        /**
+         * Fetch container list
+         * @returns {Object} Container data
+         */
+        function updateContainer(key, containerData) {
+            var ref = rootRef.child('tenant-containers').child(tenantId).child(key['$id']);
+            return firebaseUtils.updateData(ref, containerData);
+        }
+
+        /**
+         * Delete Container
+         * @returns {Object} container data
+         */
+        function deleteContainer(key) {
+            var ref = rootRef.child('tenant-containers').child(tenantId).child(key['$id']);
+            return firebaseUtils.updateData(ref, {deactivated: false});
+        }
+
+    }
+}());
+(function () {
+    'use strict';
+
+    beerService.$inject = ["$firebaseArray", "$firebaseObject", "$q", "authService", "auth", "firebaseUtils", "dxUtils", "config"];
+    angular
+        .module('app.admin.beers')
+        .factory('beerService', beerService);
+
+    /** @ngInject */
+    function beerService($firebaseArray, $firebaseObject, $q, authService, auth,firebaseUtils, dxUtils, config) {
+        var tenantId = authService.getCurrentTenant();
+        // Private variables
+
+        var service = {
+            gridOptions: gridOptions,
+            saveBeer: saveBeer,
+            updateBeer: updateBeer,
+            fetchBeerList: fetchBeerList
+        };
+
+        return service;
+
+        //////////
+
+        /**
+         * Grid Options for beer list
+         * @param {Object} dataSource 
+         */
+        function gridOptions(dataSource) {
+            var gridOptions = dxUtils.createGrid(),
+                otherConfig = {
+                    dataSource: {
+                        load: function () {
+                            var defer = $q.defer();
+                            fetchBeerList().then(function (data) {
+                                defer.resolve(data);
+                            });
+                            return defer.promise;
+                        },
+                        insert: function (beerObj) {
+                            saveBeer(beerObj);
+                        },
+                        update: function (key, beerObj) {
+                            updateBeer(key, beerObj);
+                        },
+                        remove: function (key) {
+                            deleteBeer(key);
+                        }
+                    },
+                    summary: {
+                        totalItems: [{
+                            column: 'name',
+                            summaryType: 'count'
+                        }]
+                    }, 
+                    columns: config.beerGridCols(),
+                    export: {
+                        enabled: true,
+                        fileName: 'Brews',
+                        allowExportSelectedData: true
+                    }
+                };
+
+            angular.extend(gridOptions, otherConfig);
+            return gridOptions;
+        };
+
+        /**
+         * Save form data
+         * @returns {Object} Beer Form data
+         */
+        function saveBeer(beerObj) {
+            var ref = rootRef.child('tenant-beers').child(tenantId);
+            beerObj.user = auth.$getAuth().uid;
+            return firebaseUtils.addData(ref, beerObj);
+        }
+
+        /**
+         * Fetch beer list
+         * @returns {Object} Beer data
+         */
+        function fetchBeerList() {
+            var ref = rootRef.child('tenant-beers').child(tenantId).orderByChild('deactivated').equalTo(null);
+            return firebaseUtils.fetchList(ref);
+        }
+
+        /**
+         * Fetch beer list
+         * @returns {Object} Beer data
+         */
+        function updateBeer(key, beerData) {
+            var ref = rootRef.child('tenant-beers').child(tenantId).child(key['$id']);
+            return firebaseUtils.updateData(ref, beerData);
+        }
+
+        /**
+         * Delete Beer
+         * @returns {Object} beer data
+         */
+        function deleteBeer(key) {
+            var ref = rootRef.child('tenant-beers').child(tenantId).child(key['$id']);
+            return firebaseUtils.updateData(ref, {deactivated: false});
+        }
+
+    }
+}());
 (function ()
 {
     'use strict';
@@ -5891,125 +5891,6 @@
         }
 
  
-    }
-
-})();
-(function ()
-{
-    'use strict';
-
-    config.$inject = ["msNavigationServiceProvider"];
-    angular
-        .module('app.admin', [
-            'app.admin.customers',
-            //'app.admin.beers',
-            //'app.admin.kegs'
-        ])
-        .config(config);
-
-    /** @ngInject */
-    function config(msNavigationServiceProvider)
-    {
-        // Navigation
-        // msNavigationServiceProvider.saveItem('admin', {
-        //     title : 'Admin',
-        //     group : true,
-        //     weight: 2
-        // });
-
-    }
-})();
-(function() {
-    'use strict';
-
-    adminService.$inject = ["$firebaseArray", "$firebaseObject", "auth", "$q", "$timeout", "authService", "firebaseUtils"];
-    angular
-        .module('app.admin')
-        .factory('adminService', adminService);
-
-    /** @ngInject */
-    function adminService($firebaseArray, $firebaseObject, auth, $q, $timeout, authService, firebaseUtils) {
-        var currentUser,
-            tenantId = authService.getCurrentTenant(),
-            service = {
-                setCurrentSettings: setCurrentSettings,
-                getCurrentSettings: getCurrentSettings,
-                getCurrentCustomers: getCurrentCustomers,
-                getBeers: getBeers,
-                getCurrentBulkCustomers: getCurrentBulkCustomers,
-                getCurrentOffers: getCurrentOffers
-            };
-
-        return service;
-
-        //////////
-        /**
-         * Set Current User
-         * @param {Object} User information object
-         */
-        function setCurrentSettings(data) {
-            localStorage.setItem('userObj', JSON.stringify(data));
-        }
-
-        /**
-         * Get Current Settings
-         * @param {String} Current Tenant Id
-         */
-        function getCurrentSettings() {
-            var def = $q.defer(),
-                ref = rootRef.child('settings'),
-                obj = $firebaseObject(ref);
-
-            obj.$loaded().then(function(data) {
-                def.resolve(data);
-            }).catch(function(err) {
-                def.reject(err);
-            });
-
-            return def.promise;
-        }
-
-        /**
-         * get Current Customers
-         */
-        function getCurrentCustomers() {
-            var defer = $q.defer(),
-                ref = rootRef.child('tenant-customers').child(tenantId).orderByChild('deactivated').equalTo(null);
-            firebaseUtils.fetchList(ref).then(function (data) {
-                defer.resolve(data);
-            });
-            return defer.promise;
-        }
-
-        /**
-         * Get current brews
-         */
-        function getBeers() {
-             var defer = $q.defer(),
-                ref = rootRef.child('tenant-beers').child(tenantId).orderByChild('deactivated').equalTo(null);
-            firebaseUtils.fetchList(ref).then(function (data) {
-                defer.resolve(data);
-            });
-            return defer.promise;
-        }
-
-        function getCurrentBulkCustomers() {
-            var defer = $q.defer(),
-                ref = rootRef.child('tenant-bulkbuy-customers').child(tenantId).orderByChild('deactivated').equalTo(null);
-            firebaseUtils.fetchList(ref).then(function (data) {
-                defer.resolve(data);
-            });
-            return defer.promise;
-        }
-
-        function getCurrentOffers() {
-            var defer = $q.defer(),
-                ref = rootRef.child('tenant-record-offers').child(tenantId);
-            firebaseUtils.fetchList(ref).then(function (data) {
-                defer.resolve(data);
-            });
-            return defer.promise;
-        }
     }
 
 })();
@@ -6705,6 +6586,125 @@
 
         //////////
     }
+})();
+(function ()
+{
+    'use strict';
+
+    config.$inject = ["msNavigationServiceProvider"];
+    angular
+        .module('app.admin', [
+            'app.admin.customers',
+            //'app.admin.beers',
+            //'app.admin.kegs'
+        ])
+        .config(config);
+
+    /** @ngInject */
+    function config(msNavigationServiceProvider)
+    {
+        // Navigation
+        // msNavigationServiceProvider.saveItem('admin', {
+        //     title : 'Admin',
+        //     group : true,
+        //     weight: 2
+        // });
+
+    }
+})();
+(function() {
+    'use strict';
+
+    adminService.$inject = ["$firebaseArray", "$firebaseObject", "auth", "$q", "$timeout", "authService", "firebaseUtils"];
+    angular
+        .module('app.admin')
+        .factory('adminService', adminService);
+
+    /** @ngInject */
+    function adminService($firebaseArray, $firebaseObject, auth, $q, $timeout, authService, firebaseUtils) {
+        var currentUser,
+            tenantId = authService.getCurrentTenant(),
+            service = {
+                setCurrentSettings: setCurrentSettings,
+                getCurrentSettings: getCurrentSettings,
+                getCurrentCustomers: getCurrentCustomers,
+                getBeers: getBeers,
+                getCurrentBulkCustomers: getCurrentBulkCustomers,
+                getCurrentOffers: getCurrentOffers
+            };
+
+        return service;
+
+        //////////
+        /**
+         * Set Current User
+         * @param {Object} User information object
+         */
+        function setCurrentSettings(data) {
+            localStorage.setItem('userObj', JSON.stringify(data));
+        }
+
+        /**
+         * Get Current Settings
+         * @param {String} Current Tenant Id
+         */
+        function getCurrentSettings() {
+            var def = $q.defer(),
+                ref = rootRef.child('settings'),
+                obj = $firebaseObject(ref);
+
+            obj.$loaded().then(function(data) {
+                def.resolve(data);
+            }).catch(function(err) {
+                def.reject(err);
+            });
+
+            return def.promise;
+        }
+
+        /**
+         * get Current Customers
+         */
+        function getCurrentCustomers() {
+            var defer = $q.defer(),
+                ref = rootRef.child('tenant-customers').child(tenantId).orderByChild('deactivated').equalTo(null);
+            firebaseUtils.fetchList(ref).then(function (data) {
+                defer.resolve(data);
+            });
+            return defer.promise;
+        }
+
+        /**
+         * Get current brews
+         */
+        function getBeers() {
+             var defer = $q.defer(),
+                ref = rootRef.child('tenant-beers').child(tenantId).orderByChild('deactivated').equalTo(null);
+            firebaseUtils.fetchList(ref).then(function (data) {
+                defer.resolve(data);
+            });
+            return defer.promise;
+        }
+
+        function getCurrentBulkCustomers() {
+            var defer = $q.defer(),
+                ref = rootRef.child('tenant-bulkbuy-customers').child(tenantId).orderByChild('deactivated').equalTo(null);
+            firebaseUtils.fetchList(ref).then(function (data) {
+                defer.resolve(data);
+            });
+            return defer.promise;
+        }
+
+        function getCurrentOffers() {
+            var defer = $q.defer(),
+                ref = rootRef.child('tenant-record-offers').child(tenantId);
+            firebaseUtils.fetchList(ref).then(function (data) {
+                defer.resolve(data);
+            });
+            return defer.promise;
+        }
+    }
+
 })();
 (function ()
 {
@@ -11050,6 +11050,203 @@
 {
     'use strict';
 
+    msMaterialColorPickerController.$inject = ["$scope", "$mdColorPalette", "$mdMenu", "fuseGenerator"];
+    angular
+        .module('app.core')
+        .controller('msMaterialColorPickerController', msMaterialColorPickerController)
+        .directive('msMaterialColorPicker', msMaterialColorPicker);
+
+    /** @ngInject */
+    function msMaterialColorPickerController($scope, $mdColorPalette, $mdMenu, fuseGenerator)
+    {
+        var vm = this;
+        vm.palettes = $mdColorPalette; // Material Color Palette
+        vm.selectedPalette = false;
+        vm.selectedHues = false;
+        $scope.$selectedColor = {};
+
+        // Methods
+        vm.activateHueSelection = activateHueSelection;
+        vm.selectColor = selectColor;
+        vm.removeColor = removeColor;
+
+        /**
+         * Initialize / Watch model changes
+         */
+        $scope.$watch('ngModel', setSelectedColor);
+
+        /**
+         * Activate Hue Selection
+         * @param palette
+         * @param hues
+         */
+        function activateHueSelection(palette, hues)
+        {
+            vm.selectedPalette = palette;
+            vm.selectedHues = hues;
+        }
+
+        /**
+         * Select Color
+         * @type {selectColor}
+         */
+        function selectColor(palette, hue)
+        {
+            // Update Selected Color
+            updateSelectedColor(palette, hue);
+
+            // Update Model Value
+            updateModel();
+
+            // Hide The picker
+            $mdMenu.hide();
+        }
+
+        function removeColor()
+        {
+            vm.selectedColor = {
+                palette: '',
+                hue    : '',
+                class  : ''
+            };
+
+            activateHueSelection(false, false);
+
+            updateModel();
+        }
+
+        /**
+         * Set SelectedColor by model type
+         */
+        function setSelectedColor()
+        {
+            if ( !vm.modelCtrl.$viewValue || vm.modelCtrl.$viewValue === '' )
+            {
+                removeColor();
+                return;
+            }
+
+            var palette, hue;
+
+            // If ModelType Class
+            if ( vm.msModelType === 'class' )
+            {
+                var color = vm.modelCtrl.$viewValue.split('-');
+                if ( color.length >= 5 )
+                {
+                    palette = color[1] + '-' + color[2];
+                    hue = color[3];
+                }
+                else
+                {
+                    palette = color[1];
+                    hue = color[2];
+                }
+            }
+
+            // If ModelType Object
+            else if ( vm.msModelType === 'obj' )
+            {
+                palette = vm.modelCtrl.$viewValue.palette;
+                hue = vm.modelCtrl.$viewValue.hue || 500;
+            }
+
+            // Update Selected Color
+            updateSelectedColor(palette, hue);
+        }
+
+        /**
+         * Update Selected Color
+         * @param palette
+         * @param hue
+         */
+        function updateSelectedColor(palette, hue)
+        {
+            vm.selectedColor = {
+                palette     : palette,
+                hue         : hue,
+                class       : 'md-' + palette + '-' + hue + '-bg',
+                bgColorValue: fuseGenerator.rgba(vm.palettes[palette][hue].value),
+                fgColorValue: fuseGenerator.rgba(vm.palettes[palette][hue].contrast)
+            };
+
+            // If Model object not Equals the selectedColor update it
+            // it can be happen when the model only have pallete and hue values
+            if ( vm.msModelType === 'obj' && !angular.equals(vm.selectedColor, vm.modelCtrl.$viewValue) )
+            {
+                // Update Model Value
+                updateModel();
+            }
+
+            activateHueSelection(palette, vm.palettes[palette]);
+
+            $scope.$selectedColor = vm.selectedColor;
+        }
+
+        /**
+         * Update Model Value by model type
+         */
+        function updateModel()
+        {
+            if ( vm.msModelType === 'class' )
+            {
+                vm.modelCtrl.$setViewValue(vm.selectedColor.class);
+            }
+            else if ( vm.msModelType === 'obj' )
+            {
+                vm.modelCtrl.$setViewValue(vm.selectedColor);
+            }
+        }
+    }
+
+    /** @ngInject */
+    function msMaterialColorPicker()
+    {
+        return {
+            require    : ['msMaterialColorPicker', 'ngModel'],
+            restrict   : 'E',
+            scope      : {
+                ngModel    : '=',
+                msModelType: '@?'
+            },
+            controller : 'msMaterialColorPickerController as vm',
+            transclude : true,
+            templateUrl: 'app/core/directives/ms-material-color-picker/ms-material-color-picker.html',
+            link       : function (scope, element, attrs, controllers, transclude)
+            {
+                var ctrl = controllers[0];
+
+                /**
+                 *  Pass model controller to directive controller
+                 */
+                ctrl.modelCtrl = controllers[1];
+
+                /**
+                 * ModelType: 'obj', 'class'(default)
+                 * @type {string|string}
+                 */
+                ctrl.msModelType = scope.msModelType || 'class';
+
+                transclude(scope, function (clone)
+                {
+                    clone = clone.filter(function (i, el)
+                    {
+                        return ( el.nodeType === 1 ) ? true : false;
+                    });
+
+                    if ( clone.length )
+                    {
+                        element.find('ms-color-picker-button').replaceWith(clone);
+                    }
+                });
+            }
+        };
+    }
+})();
+(function ()
+{
+    'use strict';
+
     msMasonryController.$inject = ["$scope", "$window", "$mdMedia", "$timeout"];
     msMasonry.$inject = ["$timeout"];
     angular
@@ -11297,203 +11494,6 @@
                 controller.reLayout();
             });
         }
-    }
-})();
-(function ()
-{
-    'use strict';
-
-    msMaterialColorPickerController.$inject = ["$scope", "$mdColorPalette", "$mdMenu", "fuseGenerator"];
-    angular
-        .module('app.core')
-        .controller('msMaterialColorPickerController', msMaterialColorPickerController)
-        .directive('msMaterialColorPicker', msMaterialColorPicker);
-
-    /** @ngInject */
-    function msMaterialColorPickerController($scope, $mdColorPalette, $mdMenu, fuseGenerator)
-    {
-        var vm = this;
-        vm.palettes = $mdColorPalette; // Material Color Palette
-        vm.selectedPalette = false;
-        vm.selectedHues = false;
-        $scope.$selectedColor = {};
-
-        // Methods
-        vm.activateHueSelection = activateHueSelection;
-        vm.selectColor = selectColor;
-        vm.removeColor = removeColor;
-
-        /**
-         * Initialize / Watch model changes
-         */
-        $scope.$watch('ngModel', setSelectedColor);
-
-        /**
-         * Activate Hue Selection
-         * @param palette
-         * @param hues
-         */
-        function activateHueSelection(palette, hues)
-        {
-            vm.selectedPalette = palette;
-            vm.selectedHues = hues;
-        }
-
-        /**
-         * Select Color
-         * @type {selectColor}
-         */
-        function selectColor(palette, hue)
-        {
-            // Update Selected Color
-            updateSelectedColor(palette, hue);
-
-            // Update Model Value
-            updateModel();
-
-            // Hide The picker
-            $mdMenu.hide();
-        }
-
-        function removeColor()
-        {
-            vm.selectedColor = {
-                palette: '',
-                hue    : '',
-                class  : ''
-            };
-
-            activateHueSelection(false, false);
-
-            updateModel();
-        }
-
-        /**
-         * Set SelectedColor by model type
-         */
-        function setSelectedColor()
-        {
-            if ( !vm.modelCtrl.$viewValue || vm.modelCtrl.$viewValue === '' )
-            {
-                removeColor();
-                return;
-            }
-
-            var palette, hue;
-
-            // If ModelType Class
-            if ( vm.msModelType === 'class' )
-            {
-                var color = vm.modelCtrl.$viewValue.split('-');
-                if ( color.length >= 5 )
-                {
-                    palette = color[1] + '-' + color[2];
-                    hue = color[3];
-                }
-                else
-                {
-                    palette = color[1];
-                    hue = color[2];
-                }
-            }
-
-            // If ModelType Object
-            else if ( vm.msModelType === 'obj' )
-            {
-                palette = vm.modelCtrl.$viewValue.palette;
-                hue = vm.modelCtrl.$viewValue.hue || 500;
-            }
-
-            // Update Selected Color
-            updateSelectedColor(palette, hue);
-        }
-
-        /**
-         * Update Selected Color
-         * @param palette
-         * @param hue
-         */
-        function updateSelectedColor(palette, hue)
-        {
-            vm.selectedColor = {
-                palette     : palette,
-                hue         : hue,
-                class       : 'md-' + palette + '-' + hue + '-bg',
-                bgColorValue: fuseGenerator.rgba(vm.palettes[palette][hue].value),
-                fgColorValue: fuseGenerator.rgba(vm.palettes[palette][hue].contrast)
-            };
-
-            // If Model object not Equals the selectedColor update it
-            // it can be happen when the model only have pallete and hue values
-            if ( vm.msModelType === 'obj' && !angular.equals(vm.selectedColor, vm.modelCtrl.$viewValue) )
-            {
-                // Update Model Value
-                updateModel();
-            }
-
-            activateHueSelection(palette, vm.palettes[palette]);
-
-            $scope.$selectedColor = vm.selectedColor;
-        }
-
-        /**
-         * Update Model Value by model type
-         */
-        function updateModel()
-        {
-            if ( vm.msModelType === 'class' )
-            {
-                vm.modelCtrl.$setViewValue(vm.selectedColor.class);
-            }
-            else if ( vm.msModelType === 'obj' )
-            {
-                vm.modelCtrl.$setViewValue(vm.selectedColor);
-            }
-        }
-    }
-
-    /** @ngInject */
-    function msMaterialColorPicker()
-    {
-        return {
-            require    : ['msMaterialColorPicker', 'ngModel'],
-            restrict   : 'E',
-            scope      : {
-                ngModel    : '=',
-                msModelType: '@?'
-            },
-            controller : 'msMaterialColorPickerController as vm',
-            transclude : true,
-            templateUrl: 'app/core/directives/ms-material-color-picker/ms-material-color-picker.html',
-            link       : function (scope, element, attrs, controllers, transclude)
-            {
-                var ctrl = controllers[0];
-
-                /**
-                 *  Pass model controller to directive controller
-                 */
-                ctrl.modelCtrl = controllers[1];
-
-                /**
-                 * ModelType: 'obj', 'class'(default)
-                 * @type {string|string}
-                 */
-                ctrl.msModelType = scope.msModelType || 'class';
-
-                transclude(scope, function (clone)
-                {
-                    clone = clone.filter(function (i, el)
-                    {
-                        return ( el.nodeType === 1 ) ? true : false;
-                    });
-
-                    if ( clone.length )
-                    {
-                        element.find('ms-color-picker-button').replaceWith(clone);
-                    }
-                });
-            }
-        };
     }
 })();
 (function ()
@@ -13318,7 +13318,7 @@
                     mode: 'virtual'
                 },
                 headerFilter: {
-                    visible: true
+                    visible: false
                 },
                 searchPanel: {
                     visible: true,
@@ -13347,7 +13347,7 @@
                 rowAlternationEnabled: false,
                 columnAutoWidth: true,
                 sorting: {
-                    mode: 'multiple'
+                    mode: 'none'
                 },
                 height: 520
             };

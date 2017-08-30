@@ -7093,22 +7093,22 @@ try{webpackJsonpFirebase([0],[function(e,t,n){"use strict";function r(e){return 
 
     config.$inject = ["$stateProvider", "$translatePartialLoaderProvider", "msNavigationServiceProvider"];
     angular
-        .module('app.pages.auth.forgot-password', [])
+        .module('app.auth.forgot-password', [])
         .config(config);
 
     /** @ngInject */
     function config($stateProvider, $translatePartialLoaderProvider, msNavigationServiceProvider)
     {
         // State
-        $stateProvider.state('app.pages_auth_forgot-password', {
-            url      : '/pages/auth/forgot-password',
+        $stateProvider.state('app.auth_forgot-password', {
+            url      : '/auth/forgot-password',
             views    : {
                 'main@'                                 : {
                     templateUrl: 'app/core/layouts/content-only.html',
                     controller : 'MainController as vm'
                 },
-                'content@app.pages_auth_forgot-password': {
-                    templateUrl: 'app/auth/forgot-password/forgot-password.html',
+                'content@app.auth_forgot-password': {
+                    templateUrl: 'app/main/auth/forgot-password/forgot-password.html',
                     controller : 'ForgotPasswordController as vm'
                 }
             },
@@ -7116,7 +7116,7 @@ try{webpackJsonpFirebase([0],[function(e,t,n){"use strict";function r(e){return 
         });
 
         // Translation
-        $translatePartialLoaderProvider.addPart('app/auth/forgot-password');
+        $translatePartialLoaderProvider.addPart('app/main/auth/forgot-password');
 
         // Navigation
     }
@@ -7128,7 +7128,7 @@ try{webpackJsonpFirebase([0],[function(e,t,n){"use strict";function r(e){return 
 
     ForgotPasswordController.$inject = ["authService"];
     angular
-        .module('app.pages.auth.forgot-password')
+        .module('app.auth.forgot-password')
         .controller('ForgotPasswordController', ForgotPasswordController);
 
     /** @ngInject */
@@ -12104,49 +12104,6 @@ try{webpackJsonpFirebase([0],[function(e,t,n){"use strict";function r(e){return 
 
     angular
         .module('app.core')
-        .directive('msCard', msCardDirective);
-
-    /** @ngInject */
-    function msCardDirective()
-    {
-        return {
-            restrict: 'E',
-            scope   : {
-                templatePath: '=template',
-                card        : '=ngModel',
-                vm          : '=viewModel'
-            },
-            template: '<div class="ms-card-content-wrapper" ng-include="templatePath" onload="cardTemplateLoaded()"></div>',
-            compile : function (tElement)
-            {
-                // Add class
-                tElement.addClass('ms-card');
-
-                return function postLink(scope, iElement)
-                {
-                    // Methods
-                    scope.cardTemplateLoaded = cardTemplateLoaded;
-
-                    //////////
-
-                    /**
-                     * Emit cardTemplateLoaded event
-                     */
-                    function cardTemplateLoaded()
-                    {
-                        scope.$emit('msCard::cardTemplateLoaded', iElement);
-                    }
-                };
-            }
-        };
-    }
-})();
-(function ()
-{
-    'use strict';
-
-    angular
-        .module('app.core')
         .controller('MsFormWizardController', MsFormWizardController)
         .directive('msFormWizard', msFormWizardDirective)
         .directive('msFormWizardForm', msFormWizardFormDirective);
@@ -12430,6 +12387,49 @@ try{webpackJsonpFirebase([0],[function(e,t,n){"use strict";function r(e){return 
             {
                 ngModel.$formatters.push(msDatepickerFixConfig.formatter); // to view
                 ngModel.$parsers.push(msDatepickerFixConfig.parser); // to model
+            }
+        };
+    }
+})();
+(function ()
+{
+    'use strict';
+
+    angular
+        .module('app.core')
+        .directive('msCard', msCardDirective);
+
+    /** @ngInject */
+    function msCardDirective()
+    {
+        return {
+            restrict: 'E',
+            scope   : {
+                templatePath: '=template',
+                card        : '=ngModel',
+                vm          : '=viewModel'
+            },
+            template: '<div class="ms-card-content-wrapper" ng-include="templatePath" onload="cardTemplateLoaded()"></div>',
+            compile : function (tElement)
+            {
+                // Add class
+                tElement.addClass('ms-card');
+
+                return function postLink(scope, iElement)
+                {
+                    // Methods
+                    scope.cardTemplateLoaded = cardTemplateLoaded;
+
+                    //////////
+
+                    /**
+                     * Emit cardTemplateLoaded event
+                     */
+                    function cardTemplateLoaded()
+                    {
+                        scope.$emit('msCard::cardTemplateLoaded', iElement);
+                    }
+                };
             }
         };
     }

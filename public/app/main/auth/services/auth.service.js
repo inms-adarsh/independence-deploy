@@ -195,7 +195,7 @@
             var def = $q.defer();
 
             auth.$sendPasswordResetEmail(email).then(function () {
-                console.log("Password reset email sent successfully!");
+                alert("Password reset email sent successfully!");
             }).catch(function (error) {
                 console.error("Error: ", error);
             });

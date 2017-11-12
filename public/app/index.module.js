@@ -35,6 +35,8 @@
             //'app.bookings',
             //'app.vendings',
             'app.records',
-            'app.bulkbuys'
+            'app.bulkbuys',
+            'app.reset-password'
+
         ]);
 })();

@@ -540,16 +540,16 @@ try{webpackJsonpFirebase([0],[function(e,t,n){"use strict";function r(e){return 
 
 //# sourceMappingURL=firebase.js.map
 
-    var config = {
-            apiKey: "AIzaSyBfUShJrlchj8I3wddwX3cWZfe5BiJ0dMI",
-            authDomain: "independence-e3183.firebaseapp.com",
-            databaseURL: "https://independence-e3183.firebaseio.com",
-            projectId: "independence-e3183",
-            storageBucket: "independence-e3183.appspot.com",
-            messagingSenderId: "750684147677"
-        };
-        firebase.initializeApp(config);
-        var rootRef = firebase.database().ref();
+var config = {
+    apiKey: "AIzaSyBfBLWVGkeayZ5fO9oiF8cuE5G-rmEZO98",
+    authDomain: "brewery-122de.firebaseapp.com",
+    databaseURL: "https://brewery-122de.firebaseio.com",
+    projectId: "brewery-122de",
+    storageBucket: "brewery-122de.appspot.com",
+    messagingSenderId: "664579701651"
+};
+firebase.initializeApp(config);
+var rootRef = firebase.database().ref();
 
 (function ()
 {
@@ -1319,6 +1319,97 @@ try{webpackJsonpFirebase([0],[function(e,t,n){"use strict";function r(e){return 
 
     config.$inject = ["$stateProvider", "$translatePartialLoaderProvider", "msApiProvider", "msNavigationServiceProvider"];
     angular
+        .module('app.settings.taxes',
+            [
+                // 3rd Party Dependencies
+                'dx'
+            ]
+        )
+        .config(config);
+
+    /** @ngInject */
+    function config($stateProvider, $translatePartialLoaderProvider, msApiProvider, msNavigationServiceProvider)
+    {
+        // State
+        $stateProvider
+            .state('app.taxes', {
+                abstract: true,
+                url     : '/taxes'
+            })
+            .state('app.taxes.list', {
+                url      : '/list',
+                views    : {
+                    'content@app': {
+                        templateUrl: 'app/main/settings/taxes/views/list-view/taxes.html',
+                        controller : 'TaxesController as vm'
+                    }
+                },
+                 resolve : {
+                    currentAuth: ["auth", function (auth) {
+                        // returns a promisse so the resolve waits for it to complete
+                        return auth.$requireSignIn();
+                    }],
+                    tenantInfo: ["auth", "authService", function(auth, authService){
+                        return authService.retrieveTenant();
+                    }],
+                    settings: ["settingsService", function(settingsService) {
+                        return settingsService.getCurrentSettings();
+                    }]
+                },
+                bodyClass: 'taxes'
+            });
+
+        // Translation
+        $translatePartialLoaderProvider.addPart('app/main/settings/taxes');
+
+        // Api
+        msApiProvider.register('taxes.dashboard', ['app/data/e-commerce/dashboard.json']);
+        msApiProvider.register('taxes.products', ['app/data/e-commerce/products.json']);
+        msApiProvider.register('taxes.product', ['app/data/e-commerce/product.json']);
+        msApiProvider.register('taxes.orders', ['app/data/e-commerce/orders.json']);
+        msApiProvider.register('taxes.statuses', ['app/data/e-commerce/statuses.json']);
+        msApiProvider.register('taxes.order', ['app/data/e-commerce/order.json']);
+
+        // Navigation
+
+        msNavigationServiceProvider.saveItem('settings.taxes', {
+            title: 'Taxes',
+            state: 'app.taxes.list'
+        });
+    }
+})();
+(function ()
+{
+    'use strict';
+
+    TaxesController.$inject = ["$state", "$scope", "$mdDialog", "$document", "taxService"];
+    angular
+        .module('app.settings.taxes')
+        .controller('TaxesController', TaxesController);
+
+    /** @ngInject */
+    function TaxesController($state, $scope, $mdDialog, $document, taxService)
+    {
+        var vm = this;
+
+        // Data
+        
+        // Methods
+        init();
+        //////////
+
+        function init() {
+            vm.taxGridOptions = taxService.gridOptions('vm.taxes');
+        }
+
+    }
+})();
+(function ()
+{
+    'use strict';
+
+    config.$inject = ["$stateProvider", "$translatePartialLoaderProvider", "msApiProvider", "msNavigationServiceProvider"];
+    angular
         .module('app.settings.taxgroups',
             [
                 // 3rd Party Dependencies
@@ -1415,97 +1506,6 @@ try{webpackJsonpFirebase([0],[function(e,t,n){"use strict";function r(e){return 
                 vm.taxDataGridOptions = taxgroupService.taxGrid(orders);
             });
             return defer.promise;
-        }
-
-    }
-})();
-(function ()
-{
-    'use strict';
-
-    config.$inject = ["$stateProvider", "$translatePartialLoaderProvider", "msApiProvider", "msNavigationServiceProvider"];
-    angular
-        .module('app.settings.taxes',
-            [
-                // 3rd Party Dependencies
-                'dx'
-            ]
-        )
-        .config(config);
-
-    /** @ngInject */
-    function config($stateProvider, $translatePartialLoaderProvider, msApiProvider, msNavigationServiceProvider)
-    {
-        // State
-        $stateProvider
-            .state('app.taxes', {
-                abstract: true,
-                url     : '/taxes'
-            })
-            .state('app.taxes.list', {
-                url      : '/list',
-                views    : {
-                    'content@app': {
-                        templateUrl: 'app/main/settings/taxes/views/list-view/taxes.html',
-                        controller : 'TaxesController as vm'
-                    }
-                },
-                 resolve : {
-                    currentAuth: ["auth", function (auth) {
-                        // returns a promisse so the resolve waits for it to complete
-                        return auth.$requireSignIn();
-                    }],
-                    tenantInfo: ["auth", "authService", function(auth, authService){
-                        return authService.retrieveTenant();
-                    }],
-                    settings: ["settingsService", function(settingsService) {
-                        return settingsService.getCurrentSettings();
-                    }]
-                },
-                bodyClass: 'taxes'
-            });
-
-        // Translation
-        $translatePartialLoaderProvider.addPart('app/main/settings/taxes');
-
-        // Api
-        msApiProvider.register('taxes.dashboard', ['app/data/e-commerce/dashboard.json']);
-        msApiProvider.register('taxes.products', ['app/data/e-commerce/products.json']);
-        msApiProvider.register('taxes.product', ['app/data/e-commerce/product.json']);
-        msApiProvider.register('taxes.orders', ['app/data/e-commerce/orders.json']);
-        msApiProvider.register('taxes.statuses', ['app/data/e-commerce/statuses.json']);
-        msApiProvider.register('taxes.order', ['app/data/e-commerce/order.json']);
-
-        // Navigation
-
-        msNavigationServiceProvider.saveItem('settings.taxes', {
-            title: 'Taxes',
-            state: 'app.taxes.list'
-        });
-    }
-})();
-(function ()
-{
-    'use strict';
-
-    TaxesController.$inject = ["$state", "$scope", "$mdDialog", "$document", "taxService"];
-    angular
-        .module('app.settings.taxes')
-        .controller('TaxesController', TaxesController);
-
-    /** @ngInject */
-    function TaxesController($state, $scope, $mdDialog, $document, taxService)
-    {
-        var vm = this;
-
-        // Data
-        
-        // Methods
-        init();
-        //////////
-
-        function init() {
-            vm.taxGridOptions = taxService.gridOptions('vm.taxes');
         }
 
     }
@@ -6578,7 +6578,6 @@ try{webpackJsonpFirebase([0],[function(e,t,n){"use strict";function r(e){return 
             'app.auth.login',
             'app.auth.register',
             'app.auth.forgot-password',
-            'app.auth.reset-password',
             'app.auth.lock'
         ])
         .config(config);
@@ -6809,58 +6808,6 @@ try{webpackJsonpFirebase([0],[function(e,t,n){"use strict";function r(e){return 
         }
     }
 
-})();
-(function ()
-{
-    'use strict';
-
-    config.$inject = ["$stateProvider", "$translatePartialLoaderProvider", "msNavigationServiceProvider"];
-    angular
-        .module('app.auth.reset-password', [])
-        .config(config);
-
-    /** @ngInject */
-    function config($stateProvider, $translatePartialLoaderProvider, msNavigationServiceProvider)
-    {
-        // State
-        $stateProvider.state('app.auth_reset-password', {
-            url      : '/auth/reset-password',
-            views    : {
-                'main@'                                : {
-                    templateUrl: 'app/core/layouts/content-only.html',
-                    controller : 'MainController as vm'
-                },
-                'content@app.auth_reset-password': {
-                    templateUrl: 'app/main/auth/reset-password/reset-password.html',
-                    controller : 'ResetPasswordController as vm'
-                }
-            },
-            bodyClass: 'reset-password'
-        });
-
-        // Translation
-        $translatePartialLoaderProvider.addPart('app/main/auth/reset-password');
-
-    }
-
-})();
-(function ()
-{
-    'use strict';
-
-    angular
-        .module('app.auth.reset-password')
-        .controller('ResetPasswordController', ResetPasswordController);
-
-    /** @ngInject */
-    function ResetPasswordController()
-    {
-        // Data
-
-        // Methods
-
-        //////////
-    }
 })();
 (function ()
 {
@@ -7145,6 +7092,87 @@ try{webpackJsonpFirebase([0],[function(e,t,n){"use strict";function r(e){return 
          */
         function forgotPassword(form) {
             authService.forgotPassword(form.email);
+        }
+    }
+})();
+(function ()
+{
+    'use strict';
+
+    config.$inject = ["$stateProvider", "$translatePartialLoaderProvider", "msNavigationServiceProvider"];
+    angular
+        .module('app.reset-password', [])
+        .config(config);
+
+    /** @ngInject */
+    function config($stateProvider, $translatePartialLoaderProvider, msNavigationServiceProvider)
+    {
+        // State
+        $stateProvider
+            .state('app.password', {
+                abstract: true,
+                url     : '/password'
+            })
+            .state('app.password.change', {
+                url      : '/change',
+                views    : {
+                    'content@app': {
+                        templateUrl: 'app/main/apps/reset-password/reset-password.html',
+                        controller : 'ResetPasswordController as vm'
+                    }
+                },
+                 resolve : {
+                    currentAuth: ["auth", function (auth) {
+                        // returns a promisse so the resolve waits for it to complete
+                        return auth.$requireSignIn();
+                    }]
+                },
+                bodyClass: 'reset-password'
+            });
+
+        // Translation
+        $translatePartialLoaderProvider.addPart('app/main/apps/reset-password');
+
+        // Navigation
+    }
+
+})();
+(function () {
+    'use strict';
+
+    ResetPasswordController.$inject = ["currentAuth", "authService", "auth", "$state"];
+    angular
+        .module('app.reset-password')
+        .controller('ResetPasswordController', ResetPasswordController);
+
+    /** @ngInject */
+    function ResetPasswordController(currentAuth, authService, auth, $state) {
+        // Data
+        var vm = this;
+        // Methods
+        vm.updatePassword = updatePassword;
+        //////////
+        /**
+         * Update user's password
+         */
+        function updatePassword(form) {
+            var user = auth.$getAuth();
+            var credential =  {
+                email: user.email,
+                password: form.old_password
+            };
+            auth.$signInWithEmailAndPassword(user.email, form.old_password).then(function () {
+                // User re-authenticated.
+
+                authService.updatePassword(form).then(function (data) {
+                    alert("Password changed successfully");
+                    $state.go('app.records.list');
+                }).catch(function () {
+
+                });
+            }).catch(function (error) {
+                // An error happened.
+            });
         }
     }
 })();
@@ -15312,7 +15340,7 @@ try{webpackJsonpFirebase([0],[function(e,t,n){"use strict";function r(e){return 
         vm.toggleMsNavigationFolded = toggleMsNavigationFolded;
         vm.search = search;
         vm.searchResultClick = searchResultClick;
-
+        vm.changePassword = changePassword;
         //////////
 
         init();
@@ -15362,6 +15390,9 @@ try{webpackJsonpFirebase([0],[function(e,t,n){"use strict";function r(e){return 
             localStorage.clear();
         }
 
+        function changePassword() {
+            $state.go('app.password.change');
+        }
         /**
          * Change Language
          */
@@ -15633,7 +15664,9 @@ try{webpackJsonpFirebase([0],[function(e,t,n){"use strict";function r(e){return 
             //'app.bookings',
             //'app.vendings',
             'app.records',
-            'app.bulkbuys'
+            'app.bulkbuys',
+            'app.reset-password'
+
         ]);
 })();
 (function ()

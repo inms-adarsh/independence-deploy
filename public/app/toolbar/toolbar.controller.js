@@ -74,7 +74,7 @@
         vm.toggleMsNavigationFolded = toggleMsNavigationFolded;
         vm.search = search;
         vm.searchResultClick = searchResultClick;
-
+        vm.changePassword = changePassword;
         //////////
 
         init();
@@ -124,6 +124,9 @@
             localStorage.clear();
         }
 
+        function changePassword() {
+            $state.go('app.password.change');
+        }
         /**
          * Change Language
          */

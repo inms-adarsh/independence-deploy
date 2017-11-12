@@ -3,7 +3,7 @@
 
         <div class="logo" layout="row" layout-align="start center">
             <span class="logo-image">I</span>
-            <span class="logo-text">Independence Loyalty Portal</span>
+            <span class="logo-text">Brewery Portal</span>
         </div>
 
         <div class="toolbar-separator"></div>
@@ -51,6 +51,10 @@
                 </md-button>
 
                 <md-menu-content width="3">
+                    <md-menu-item class="md-indent" ui-sref="app.mail">
+                        <md-icon md-font-icon="icon-account" class="icon"></md-icon>
+                        <md-button ng-click="vm.changePassword()">Change Password</md-button>
+                    </md-menu-item>
 
                     <md-menu-item class="md-indent">
                         <md-icon md-font-icon="icon-logout" class="icon"></md-icon>
